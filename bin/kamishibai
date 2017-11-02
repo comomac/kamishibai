@@ -1,0 +1,59 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+
+# License: refer to LICENSE file
+
+# making sure program runs in UTF-8 encoding in any environment
+Encoding.default_external = Encoding::UTF_8
+Encoding.default_internal = Encoding::UTF_8
+
+require 'rbconfig'
+require 'getoptlong'
+require 'json/ext' # load early to use good quality json library instead of crappy one
+
+opts = GetoptLong.new(
+	[ "--debug",   "-d", GetoptLong::NO_ARGUMENT ]
+)
+
+$debug = false
+opts.each do |opt, arg|
+	if opt == '--debug'
+		$debug = true
+	end
+end
+$LOAD_PATH << File.expand_path( File.dirname(__FILE__) + '/../lib' )
+
+
+
+
+require 'kamishibai/config'
+
+# load config file, auto create if it doesn't exists
+if ARGV[0]
+	$settings = Kamishibai::Config.new( ARGV[0] )
+else
+	$settings = Kamishibai::Config.new
+end
+
+
+
+require 'kamishibai'
+
+# flag to restart the webserver if shutdown
+$RERUN = false
+
+at_exit do
+	if $RERUN
+		puts 'restarting...'
+		opt_d = $debug ? '--debug' : ''
+		
+		if RbConfig::CONFIG['host_os'] =~ /ming/
+			exe = "ruby #{__FILE__}"
+		else
+			exe = __FILE__
+		end
+		`#{exe} #{opt_d} "#{$KAMISHIBAI_CONFIG_PATH}"`
+	end
+end
+
+Kamishibai::Webserver.run!

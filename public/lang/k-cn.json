@@ -1,0 +1,82 @@
+{
+	"Kamishibai": "Kamishibai",
+	"yes": "是",
+	"no": "否",
+	"username": "用戶名",
+	"password": "密碼",
+	"cancel": "取消",
+	"save": "儲存",
+	"close": "關閉",
+	"orderby": "排序方式",
+	"filename": "檔案名",
+	"filesize": "檔案大小",
+	"filedate": "檔案日期",
+	"folder": "文件夾",
+	"folders": "文件夾",
+	"preferences": "設定",
+	"toggleFullScreen": "全屏切換",
+
+	"login": {
+		"header": "Kamishibai 登錄",
+		"LogIn": "登錄"
+	},
+
+	"browse":
+	{
+		"Path": "路徑",
+		"All": "全",
+		"New": "新",
+		"Reading": "閱讀中",
+		"Finished": "閱讀完",
+		"Author": "作者",
+		"Search": "搜索",
+		"Action": "動作",
+		"Bookmarks": "書籤",
+		"Menu": "菜單",
+		"SimpleMode": "簡單模式",
+		"Preferences": "設定",
+		"Restart": "重啟程序",
+		"RestartMsg": "重啟中。請稍候。",
+		"LogOut": "登出",
+		"Edit": "編輯",
+		"Delete": "刪除",
+		"DeleteDisable": "刪除結束"
+	},
+
+	"reader":
+	{
+		"Single": "單頁(s)",
+		"Double": "雙頁",
+		"ReadToLeft": "L&larr;R (e)",
+		"ReadToRight": "L&rarr;R",
+		"Normal": "norm<u>a</u>l",
+		"Full": "full",
+		"NoBlackBar": "no <u>b</u>lack bar",
+		"BlackBar": "black bar",
+		"Even": "e<u>v</u>en",
+		"Odd": "odd",
+		"Home": "Home (&#9243;)",
+		"Close": "Close (&crarr;)"
+	},
+
+	"config":
+	{
+		"Browse": "瀏覽",
+		"SaveFolders": "Save Folders",
+		"Path": "Path",
+		"AddFolder": "Add Folder",
+		"RemoveFolder": "X",
+		"Action": "Action",
+		"Books": "Books",
+		"Port": "Port",
+		"NewBookDays": "新書(天)",
+		"ResizeImage": "Resize Image",
+		"ImageQuality": "Image Quality (%)",
+		"SavePreferences": "Save Preferences",
+		"alertPort": "端口只能在1025和65535之間",
+		"alertImageQuality": "Image quality can only be between 0 and 100",
+		"Saving": "Saving",
+		"SavingMsg": "Saving preferences/folders...",
+		"Statistics": "統計"
+	}
+}

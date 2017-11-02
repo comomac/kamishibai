@@ -1,0 +1,82 @@
+{
+	"Kamishibai": "Kamishibai",
+	"yes": "yes",
+	"no": "no",
+	"username": "Username",
+	"password": "Password",
+	"cancel": "Cancel",
+	"save": "Save",
+	"close": "Close",
+	"orderby": "Order By",
+	"filename": "Name",
+	"filesize": "Size",
+	"filedate": "Date",
+	"folder": "Folder",
+	"folders": "Folders",
+	"preferences": "Preferences",
+	"toggleFullScreen": "Toggle Full Screen",
+
+	"login": {
+		"header": "Kamishibai log in",
+		"LogIn": "Log In"
+	},
+
+	"browse":
+	{
+		"Path": "Path",
+		"All": "All",
+		"New": "New",
+		"Reading": "Reading",
+		"Finished": "Finished",
+		"Author": "Author",
+		"Search": "Search",
+		"Action": "Action",
+		"Bookmarks": "Bookmarks",
+		"Menu": "Menu",
+		"SimpleMode": "Simple Mode",
+		"Preferences": "Preferences",
+		"Restart": "Restart",
+		"RestartMsg": "Restarting... Please wait, the page will auto refresh in few seconds.",
+		"LogOut": "Log out",
+		"Edit": "Edit",
+		"Delete": "Delete",
+		"DeleteDisable": "Disable Delete"
+	},
+
+	"reader":
+	{
+		"Single": "<u>s</u>ingle",
+		"Double": "double",
+		"ReadToLeft": "L&larr;R (e)",
+		"ReadToRight": "L&rarr;R",
+		"Normal": "norm<u>a</u>l",
+		"Full": "full",
+		"NoBlackBar": "no <u>b</u>lack bar",
+		"BlackBar": "black bar",
+		"Even": "e<u>v</u>en",
+		"Odd": "odd",
+		"Home": "Home (&#9243;)",
+		"Close": "Close (&crarr;)"
+	},
+
+	"config":
+	{
+		"Browse": "Browse",
+		"SaveFolders": "Save Folders",
+		"Path": "Path",
+		"AddFolder": "Add Folder",
+		"RemoveFolder": "X",
+		"Action": "Action",
+		"Books": "Books",
+		"Port": "Port",
+		"NewBookDays": "New Book (Days)",
+		"ResizeImage": "Resize Image",
+		"ImageQuality": "Image Quality (%)",
+		"SavePreferences": "Save Preferences",
+		"alertPort": "Port number can only be between 1025 and 65535",
+		"alertImageQuality": "Image quality can only be between 0 and 100",
+		"Saving": "Saving",
+		"SavingMsg": "Saving preferences/folders...",
+		"Statistics": "Statistics"
+	}
+}

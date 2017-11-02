@@ -1,0 +1,247 @@
+@media all and (max-width: 799px) {
+	/* portrait mode */
+	#searchbox-holder {
+		width: 50%;
+	}
+	#leftbox {
+		right: 50%;
+	}
+	#bookinfo {
+		left: 50%;
+		width: 50%;
+	}
+	#rcontainer {
+		left: 50%;
+		width: 50%;
+	}
+}
+@media all and (min-width: 800px) {
+	/* landscape mode */
+	#searchbox-holder {
+		width: 40%;
+	}
+	#leftbox {
+		right: 60%;
+	}
+	#bookinfo {
+		left: 40%;
+		width: 60%;
+	}
+	#rcontainer {
+		left: 40%;
+		width: 60%;
+	}
+}
+#window {
+	/* using this to trap everything in here to prevent the overflow of the element */
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+#menu {
+	z-index: 10;
+	top: 0px;
+	border-bottom: solid 1px #000;
+	height: 40px;
+	text-align: center;
+	background: linear-gradient(#DDD, #BBB) repeat scroll 0% 0% #BBB;
+}
+#searchbox-holder {
+	float: left;
+	position: absolute;
+	top: 41px;
+	left: 0px;
+	height: 40px;
+	margin: 0px;
+	padding-top: 5px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+/*#searchbox {
+	position: absolute;
+	width: 80%;
+}*/
+#leftbox {
+	/*float: left;*/
+	position: absolute;
+	top: 81px;
+	left: 0px;
+	/*width: 50%;*/
+	margin: 0px;
+	bottom: 0px;
+	overflow: hidden;
+	overflow-y: scroll;
+	-webkit-overflow-scrolling: touch;
+}
+#bookinfo {
+	float: left;
+	position: absolute;
+	top: 42px;
+	height: 80px;
+	/* font-size: 20px; */
+	font-height: 1em;
+	font-weight: bold;
+	border-left: solid 1px #000;
+	border-bottom: solid 1px #000;
+	background: linear-gradient( rgb(255, 255, 255), rgb(241, 241, 241) );
+	background: -webkit-linear-gradient( rgb(255, 255, 255), rgb(241, 241, 241) );
+}
+#bookinfo > div:first-child {
+	font-size: 1.3em;
+}
+#bookinfo > div:first-child+span {
+	font-size: 0.7em;
+}
+#bookinfo * {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+
+.ui-li-divider {
+	/* divider for the leftbox */
+	cursor: default;
+	padding: 0.5em 15px;
+	font-size: 14px;
+	font-weight: 700;
+
+	margin: 0px;
+	/*padding: 0px;*/
+	display: block;
+	position: relative;
+	overflow: visible;
+	text-align: left;
+	border-width: 1px 0px 0px;
+
+	list-style: none outside none;
+	font-family: Helvetica, Arial, sans-serif;
+
+	border: 1px solid #456F9A;
+	background: linear-gradient(#6FACD5, #497BAE) repeat scroll 0% 0% #5E87B0;
+
+	color: #FFF;
+	/*text-shadow: 0px 1px 0px #FFF;*/
+}
+
+.li-title {
+	/*
+	height: 50px;
+	line-height: 50px;
+	overflow: hidden;
+	border: 1px solid #9c9c9c;
+	background-color: #bfbbb9;
+	*/
+	background: linear-gradient( rgb(255, 255, 255), rgb(241, 241, 241) );
+	/* webkit don't support css with background linear-gradient, call it by -webkit-liner-gradient */
+	background: -webkit-linear-gradient( rgb(255, 255, 255), rgb(241, 241, 241) );
+
+	/* new */
+	padding: 0.7em 15px;
+	display: block;
+	background: linear-gradient(#FFF, #F1F1F1) repeat scroll 0% 0% transparent;
+	font-family: Helvetica, Arial, sans-serif;
+	text-decoration: none;
+	border: 1px solid #BBB;
+	font-weight: 700;
+	color: #333;
+	text-shadow: 0px 1px 0px #FFF;
+	/*padding: 0px;*/
+	margin: 0px;
+
+	position: relative;
+	overflow: visible;
+	text-align: left;
+}
+.li-title:hover {
+	background: linear-gradient( rgb(200, 200, 200), rgb(241, 241, 241) );
+	background: -webkit-linear-gradient( rgb(200, 200, 200), rgb(241, 241, 241) );
+}
+.li-title:active {
+	background: linear-gradient( rgb(100, 200, 200), rgb(140, 241, 241) );
+	background: -webkit-linear-gradient( rgb(100, 200, 200), rgb(140, 241, 241) );
+}
+
+#rcontainer {
+	float: left;
+	position: absolute;
+	top: 123px;
+	bottom: 0px;
+	border-left: solid 1px #000;
+	overflow: hidden;
+	overflow-y: scroll;
+	-webkit-overflow-scrolling: touch;
+
+	display: inline-block;
+
+	list-style: none;
+    margin: 0 auto;
+    padding: 0;
+}
+#rcontainer ul {
+	list-style: none;
+    margin: 0 auto;
+    padding: 0;
+}
+#rcontainer ul li {
+	float: left;
+	width: 160px;
+	height: 220px;
+	/*background-color: #dedede;*/
+	position: relative;
+	margin: 15px;
+	display: table;
+	list-style: none;
+}
+#rcontainer ul li.reading {
+	background-color: #ffece6;
+}
+#rcontainer ul li.read {
+	/* background-color: #33cc66; */
+}
+#rcontainer ul li.active {
+	background-color: red;
+}
+#rcontainer ul li:hover {
+	/*background-color: yellow;*/
+}
+#rcontainer ul li a {
+	/* top: 0px;
+	left: 0px;
+	position: relative; */
+	width: 100%;
+	height: 100%;
+	display: table-cell;
+	text-decoration: none;
+	overflow: hidden;
+	/*background-color: yellow;
+	 opacity: 0.3; */
+}
+#rcontainer ul li a span {
+	position: absolute;
+	bottom: 0px;
+	font-size: smaller;
+	height: 42px;
+	width: 160px;
+	overflow: hidden;
+	display: inline-block;
+	color: #000;
+	/*background-color: #efe1e1;*/
+}
+#rcontainer li a img {
+	min-height: 100px;
+	min-width: 50px;
+	max-width: 160px;
+	max-height: 170px;
+	position: absolute;
+	bottom: 48px;
+	display: block;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #000;
+	box-shadow: 0px 0px 5px #999;
+	/*transform: rotate(10deg);*/
+}

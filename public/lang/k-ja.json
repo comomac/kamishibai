@@ -1,0 +1,82 @@
+{
+	"Kamishibai": "カミシバイ",
+	"yes": "はい",
+	"no": "いいえ",
+	"username": "ユーザ",
+	"password": "パスワード",
+	"cancel": "キャンセル",
+	"save": "セーブ",
+	"close": "閉じる",
+	"orderby": "並び",
+	"filename": "名",
+	"filesize": "サイズ",
+	"filedate": "日付",
+	"folder": "フォルダ",
+	"folders": "フォルダ",
+	"preferences": "設定",
+	"toggleFullScreen": "フルスクリーン",
+
+	"login": {
+		"header": "カミシバイ ログイン",
+		"LogIn": "ログイン"
+	},
+
+	"browse":
+	{
+		"Path": "フォルダ",
+		"All": "全",
+		"New": "新",
+		"Reading": "読む中",
+		"Finished": "既読",
+		"Author": "作家",
+		"Search": "捜索",
+		"Action": "行動",
+		"Bookmarks": "ブックマーク",
+		"Menu": "メニュー",
+		"SimpleMode": "簡単モード",
+		"Preferences": "設定",
+		"Restart": "再起動",
+		"RestartMsg": "再起動中、少々お待ちください。",
+		"LogOut": "ログアウト",
+		"Edit": "編集",
+		"Delete": "削除",
+		"DeleteDisable": "削除終了"
+	},
+
+	"reader":
+	{
+		"Single": "単ページ(s)",
+		"Double": "双ページ",
+		"ReadToLeft": "左&larr;右(e)",
+		"ReadToRight": "左&rarr;右",
+		"Normal": "普通(a)",
+		"Full": "フルスクリーン",
+		"NoBlackBar": "黒バー無し(b)",
+		"BlackBar": "黒バー有り",
+		"Even": "偶数頁(v)",
+		"Odd": "奇数頁",
+		"Home": "戻る (&#9243;)",
+		"Close": "閉じる (&crarr;)"
+	},
+
+	"config":
+	{
+		"Browse": "戻る",
+		"SaveFolders": "セーブ",
+		"Path": "ディレクトリ",
+		"AddFolder": "フォルダ追加",
+		"RemoveFolder": "外す",
+		"Action": "行動",
+		"Books": "本",
+		"Port": "ポート",
+		"NewBookDays": "新刊(日付)",
+		"ResizeImage": "画像再圧縮",
+		"ImageQuality": "画質(%)",
+		"SavePreferences": "セーブ",
+		"alertPort": "ポートの有効な設定は1025-65535です。",
+		"alertImageQuality": "画質の有効な設定は0-100です。",
+		"Saving": "セーブ",
+		"SavingMsg": "セーブ中、少々お待ちください。",
+		"Statistics": "統計"
+	}
+}

@@ -1,0 +1,115 @@
+!!!5
+%html(lang="en")
+	%head
+		%meta(charset="utf-8")
+		%title Kamishibai
+		%link(rel='stylesheet' type='text/css' href='/css/config.css')
+		%link(rel='stylesheet' type='text/css' href='/vendor/css/bootstrap.css')
+		%link(rel='stylesheet' type='text/css' href='/vendor/css/jqueryFileTree.css')
+		%script(src='/vendor/js/jquery-2.1.4.js')
+		%script(src='/vendor/js/bootstrap.js')
+		%script(src='/vendor/js/jquery.localize.js')
+		%script(src='/vendor/js/jqueryFileTree.js')
+		%script(src='/js/config.js')
+		%script(src='/js/utilities.js')
+	%body
+		%script
+			var drives = eval(#{available_drives});
+		%div.container
+			%div.page-header
+				%h2(data-localize="Kamishibai")
+				%a(href="/")
+					%span.btn.btn-link(data-localize="config.Browse")
+				%a(href="/statistics")
+					%span.btn.btn-link(data-localize="config.Statistics")
+
+			%div.tabbable
+				%ul.nav.nav-tabs
+					%li.active
+						%a(href="#tab1" data-toggle="tab" data-localize="folders")
+					%li
+						%a(href="#tab2" data-toggle="tab" onclick="pref_load(); return false;" data-localize="preferences")
+
+				%div.tab-content
+					%div.tab-pane.active#tab1
+						%p.text-right
+							%button.btn.btn-primary#btn_sf(href="#modal-saving" data-toggle="modal" onclick="save_dirs();" data-localize="config.SaveFolders")
+							%button.btn#btn_af(href="#modal-add-folder" data-toggle="modal" onclick="load_dir('/');" data-localize="config.AddFolder")
+
+						%table.table.table-bordered.table-striped#dirtable
+							%thead
+								%tr
+									%th.c1(data-localize="folder")
+									%th.c2(data-localize="config.Action")
+							%tbody
+							%tfoot
+								%tr
+									%td(colspan=2)
+										%span.pull-right(data-localize="config.Books")
+										%span.pull-right#total_books ?&nbsp;
+
+					%div.tab-pane#tab2
+						%form.form-horizontal
+							%div.control-group
+								%label.control-label(for="port" data-localize="config.Port")
+								%div.controls
+									%input(type="text" name="port" id="port" value="loading..." disabled="")
+							%div.control-group
+								%label.control-label(for="new_book_days" data-localize="config.NewBookDays")
+								%div.controls
+									%input(type="text" name="new_book_days" id="new_book_days" value="loading..." disabled="")
+							%div.control-group
+								%label.control-label(for="username" data-localize="username")
+								%div.controls
+									%input(type="text" name="username" id="username" value="loading..." disabled="")
+							%div.control-group
+								%label.control-label(for="password" data-localize="password")
+								%div.controls
+									%input(type="text" name="password" id="password" value="loading..." disabled="")
+							%div.control-group
+								%label.control-label(for="img_resize" data-localize="config.ResizeImage")
+								%div.controls
+									%select(name="img_resize" id="img_resize" data-role="slider" disabled="")
+										%option(value="on" data-localize="yes")
+										%option(value="off" data-localize="no")
+							%div.control-group
+								%label.control-label(for="img_quality" data-localize="config.ImageQuality")
+								%div.controls
+									%input(type="text" name="img_quality" id="img_quality" value="loading..." disabled="")
+							%div#pref-buttons
+								%div.controls
+									%button.btn#pref-cancel(onclick="pref_load(); return false;" data-localize="cancel")
+									%button.btn.btn-primary#pref-save(href="#modal-saving" data-toggle="modal" onclick="pref_save(); return false;" disabled="" data-localize="config.SavePreferences")
+			%div.text-center
+				
+
+		%div.modal.fade#modal-saving
+			%div.modal-dialog
+				%div.modal-content
+					%div.modal-header
+						%h3(data-localize="config.Saving")
+					%div.modal-body
+						%p(data-localize="config.SavingMsg")
+					%div.modal-footer
+						%p
+
+		%div.modal.fade#modal-add-folder
+			%div.modal-dialog
+				%div.modal-content
+					%div.modal-header
+						%button.close(type="button" data-dismiss="modal" aria-hidden="true") x
+						%h3.modal-title(data-localize="config.AddFolder")
+						%div
+							%div#drives
+							%label.span1(data-localize="config.Path")
+							%input.span5.input-small(type="text" name="path" id="path" value="/")
+					%div.modal-body
+						%div#af-dirnav
+					%div.modal-footer
+						%button.btn(data-dismiss="modal" aria-hiden="true" data-localize="cancel")
+						%button.btn.btn-primary#af-save(data-dismiss="modal" aria-hiden="true" onclick="af_add_dir( $('#path').val() );" data-localize="config.AddFolder")
+
+		%div(style="display: none;")
+			/ error messages, hack for localization
+			%span#alertPort(data-localize="config.alertPort")
+			%span#alertImageQuality(data-localize="config.alertImageQuality")

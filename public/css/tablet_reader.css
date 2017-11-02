@@ -1,0 +1,323 @@
+* {
+	margin: 0;
+	padding: 0;
+
+	/* prevent select from functioning */
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+input[type="text"] {
+	width: 2em;
+}
+
+.ui-bar-a > * {
+	margin: 15px;
+}
+.ui-btn > * {
+	margin: 1em;
+}
+
+#container {
+	z-index: 1000;
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	background-color: grey;
+}
+
+#currentinfo {
+	z-index: 9999;
+	position: fixed;
+	color: #ffffff;
+	bottom: 0px;
+	right: 0px;
+	/*width: 15em;*/
+	padding-bottom: 10px;
+	height: 1em;
+	background-color: #000000;
+	opacity: 0.5;
+}
+
+#booktitle {
+	text-align: center;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	max-height: 0px;
+	overflow: hidden;
+	z-index: 99;
+	transition: max-height 0.3s;
+}
+#readermenu {
+	text-align: center;
+	position: fixed;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+	max-height: 0px;
+	overflow: hidden;
+	z-index: 99;
+	transition: max-height 0.3s;
+}
+#readermenu > div {
+	min-width: 50%;
+	max-width: 80%;
+	display: inline-block;
+}
+.showtop {
+	max-height: 500px !important;
+}
+.gap {
+	margin: 15px;
+}
+.gap > input {
+	vertical-align: middle;
+}
+
+html, body { height:100%; }
+body {
+	padding:0;
+	margin:0;
+	/* background:#333; */
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select:none;
+	-o-user-select:none;
+	user-select:none;
+	-webkit-text-size-adjust:none;
+	-moz-text-size-adjust:none;
+	-ms-text-size-adjust:none;
+	-o-text-size-adjust:none;
+	text-size-adjust:none;
+	
+	/*color:#eee;*/
+	font-family:helvetica;
+	/*font-size:12px;*/
+	
+}
+
+#wrapper0 {
+	position:absolute; z-index:1;
+	top:0px; bottom:0px; left:0;
+	width:100%;
+	background:#aaa;
+	overflow:auto;
+}
+#wrapper1 {
+	position:absolute; z-index:1;
+	top:0px; bottom:0px; left:0;
+	width:100%;
+	background:#aaa;
+	overflow:auto;
+}
+#wrapper2 {
+	position:absolute; z-index:1;
+	top:0px; bottom:0px; left:0;
+	width:100%;
+	background:#aaa;
+	overflow:auto;
+}
+
+
+#wrapper {
+	width:100%;
+	min-width:320px;
+	height:100%;
+}
+
+#nav {
+	position:absolute;
+	z-index:100;
+	top:8px;
+	width:200px;
+	height:20px;
+	left:50%;
+	background:rgba(0,0,0,0.75);
+	padding:0;
+	margin:0 0 0 -100px;
+	-webkit-border-radius:10px;
+	-moz-border-radius:10px;
+	-ms-border-radius:10px;
+	-o-border-radius:10px;
+	border-radius:10px;
+}
+
+#nav li {
+	display:block;
+	float:left;
+	width:14px;
+	height:14px; line-height:14px;
+	-webkit-border-radius:7px;
+	-moz-border-radius:7px;
+	-ms-border-radius:7px;
+	-o-border-radius:7px;
+	border-radius:7px;
+	background:rgba(255,255,255,0.1);
+	overflow:hidden;
+	padding:0;
+	margin:3px 11px 0 0;
+	text-align:center;
+}
+
+#nav li#prev {
+	margin-left:5px;
+	background:transparent;
+}
+
+#nav li#next {
+	margin-right:0;
+	background:transparent;
+}
+
+#nav li.selected {
+	background:rgba(255,255,255,0.4);
+}
+
+#swipeview-slider > div {
+	position:relative;
+	display:-webkit-box;
+	display:-moz-box;
+	display:-ms-box;
+	display:-o-box;
+	display:box;
+	-webkit-box-orient:vertical;
+	-moz-box-orient:vertical;
+	-ms-box-orient:vertical;
+	-o-box-orient:vertical;
+	box-orient:vertical;
+	-webkit-box-pack:center;
+	-moz-box-pack:center;
+	-ms-box-pack:center;
+	-o-box-pack:center;
+	box-pack:center;
+	-webkit-box-align:center;
+	-mox-box-align:center;
+	-ms-box-align:center;
+	-o-box-align:center;
+	box-align:center;
+	overflow:hidden;
+}
+
+#swipeview-slider img {
+	display:block;
+	-webkit-transition-duration:.4s;
+	-moz-transition-duration:.4s;
+	-ms-transition-duration:.4s;
+	-o-transition-duration:.4s;
+	transition-duration:.4s;
+	-webkit-transition-property:opacity;
+	-moz-transition-property:opacity;
+	-ms-transition-property:opacity;
+	-o-transition-property:opacity;
+	transition-property:opacity;
+	opacity:1;
+	pointer-events:none;
+
+	/* me add */
+	width: auto;
+	height: auto;
+	max-width: 100%;
+	max-height: 100%;
+	margin-left: auto;
+	margin-right: auto;
+	object-fit: contain;
+}
+
+#wrapper > div > .swipeview-loading {
+	/*background-image:-webkit-gradient(linear, 0 0, 0 100%, from(#444), to(#555)),
+		-webkit-gradient(linear, 0 0, 100% 0, from(#777), to(#777));*/
+	/*background-position:50% 50%, 50% 50%;*/
+	/*background-size:200px 140px, 210px 150px;*/
+	/*background-repeat:no-repeat;*/
+}
+
+#wrapper > div > .swipeview-loading img,
+#swipeview-slider img.loading {
+	-webkit-transition-duration:0s;
+	opacity:0;
+}
+
+#swipeview-slider > * {
+	/*background-color: black;*/
+	background-color: #efefef;
+}
+
+#swipeview-masterpage-0 img, #swipeview-masterpage-1 img, #swipeview-masterpage-2 img {
+	/*max-width: 150%;
+	max-height: 150%;*/
+}
+
+#swipeview-slider > div > div {
+	font-size: 6em;
+	position: fixed;
+	text-align: center;
+	width: 2em;
+	height: 1.5em;
+	top: 50%;
+	left: 50%;
+	margin: -2em 0 0 -1em;
+	background-image: url('/images/spinner.gif');
+	background-size: 32px 32px;
+	background-repeat: no-repeat;
+	background-position: bottom center;
+	/*background-color: #eff;*/
+
+	-webkit-transition-duration:0s;
+	opacity: 0;
+	z-index: -9;
+	/*display: none;*/
+}
+
+#swipeview-slider > div > div.loading {
+	opacity: 1;
+}
+
+
+/* bits from jquery mobile ui */
+.ui-btn {
+	/*display: block;*/
+	text-align: center;
+	cursor: pointer;
+	position: relative;
+	margin: 0.5em 0px;
+	padding: 0px;
+	z-index: 10;
+}
+.ui-bar-a {
+	border: 1px solid #333;
+	background: #111 linear-gradient(#3C3C3C, #111) repeat scroll 0% 0%;
+	color: #FFF;
+	font-weight: 700;
+	text-shadow: 0px -1px 0px #000;
+	font-family: Helvetica,Arial,sans-serif;
+	opacity: 0.9;
+}
+.ui-btn-up-a {
+	font-family: Helvetica,Arial,sans-serif;
+	text-decoration: none;
+	border: 1px solid #111;
+	background: #333 linear-gradient(#444, #2D2D2D) repeat scroll 0% 0%;
+	font-weight: 700;
+	color: #FFF;
+	text-shadow: 0px 1px 0px #111;
+}
+.ui-shadow {
+	box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3);
+}
+.ui-btn-corner-all {
+    background-clip: padding-box;
+    border-radius: 1em;
+}
+
+#pageinput {
+	color: black;
+}

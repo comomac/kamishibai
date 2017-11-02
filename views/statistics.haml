@@ -1,0 +1,108 @@
+:ruby
+	test = 1234
+!!!5
+%html
+	%head
+		%meta(charset="utf-8")
+		%title Kamishibai
+		%link(rel='stylesheet' type='text/css' href='/vendor/css/bootstrap.css')
+		%script(src='/vendor/js/jquery-2.1.4.js')
+		%script(src='/vendor/js/bootstrap.js')
+		%script(src='/vendor/js/jquery.localize.js')
+		%script(src='/vendor/js/jquery.cookie.js')
+		%script(src='/js/utilities.js')
+		:css
+			p {
+				background-color: gold;
+				width: 150px;
+			}
+		:javascript
+			function test() {
+				alert('hi');
+			}
+	%body
+		%div
+			%h3
+				Total books
+			%p
+				#{ $db.books.length }
+		%div
+			%h3
+				Total pages
+			%p
+				#{ $db.books.collect { |bc, b| b.pages }.reduce( :+ ) }
+		%div
+			%h3
+				Total pages read
+			%p
+				#{ $db.books.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ) }
+		%div
+			%h3
+				Total books read
+			%p
+				#{ $db.books.collect { |bc, b| b.page if b.page }.compact.length }
+		%div
+			%h3
+				Unfinished books
+			%p
+				#{ $db.books.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length }
+		%div
+			%h3
+				Time spent reading
+			%p
+				? hours ? minutes
+		%div
+			%h3
+				Average stint
+			%p
+				? hours ? minutes
+		%div
+			%h3
+				Quickest record
+			%p
+				? pages / hour
+		%div
+			%h3
+				Longest stint
+			%p
+				? hours ? minutes
+		%div
+			%h3
+				Last books read
+			%p
+				titles...
+		%div
+			%h3
+				Favourite Authors
+			%p
+				name...
+		%div
+			%h3
+				Logins
+			%p
+				?
+		%div
+			%h3
+				Last login
+			%p
+				time
+		%div
+			%h3
+				Last IP
+			%p
+				ip
+		%div
+			%h3
+				Times started up
+			%p
+				?
+		%div
+			%h3
+				Uptime
+			%p
+				? hours ? minutes
+		%div
+			%h3
+				Total uptime
+			%p
+				? hours ? minutes

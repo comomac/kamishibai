@@ -1,0 +1,30 @@
+body {
+	background-color: #f5f5f5;
+}
+
+a, span.link {
+	color: blue;
+	text-decoration:underline;
+	cursor: hand;
+	cursor: pointer;
+}
+
+a:visited, span.visited {
+	color: purple;
+	text-decoration:underline;
+	cursor: hand;
+	cursor: pointer;
+}
+
+a:active, span.active {
+	color: red;
+	text-decoration:underline;
+	cursor: hand;
+	cursor: pointer;
+}
+
+.ui-page { -webkit-backface-visibility: hidden; }
+
+.hidden {
+	display: none;
+}

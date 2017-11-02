@@ -1,0 +1,70 @@
+!!!5
+%html
+	%head
+		%meta(charset="utf-8")
+		%title Kamishibai
+		%link(rel='stylesheet' type='text/css' href='/vendor/css/jquery-ui-1.10.0.custom.css')
+		%link(rel='stylesheet' type='text/css' href='/vendor/css/bootstrap.css')
+		%link(rel='stylesheet' type='text/css' href='/css/reader.css')
+		%script(src='/vendor/js/jquery-2.1.4.js')
+		%script(src='/vendor/js/bootstrap.js')
+		%script(src='/vendor/js/jquery.localize.js')
+		%script(src='/vendor/js/jquery-ui-1.10.2.custom.min.js')
+		%script(src='/vendor/js/jquery.cookie.js')
+		%script(src='/js/utilities.js')
+		%script(src='/js/reader.js')
+	%body
+		%div#container
+			%div#cleft
+				%a(onclick="goPrevPages()")
+			%div#cright
+				%a(onclick="goNextPages()")
+			%div#cbutton
+				%a(onclick="showmenu()")
+			%div#icontainer
+				%img#ileft
+				%div#ibar
+				%img#iright
+			%div(style="100px")
+		%div#menu
+			%div.control
+				%div#booktitle
+				%span#pagemode(data-toggle="buttons-radio")
+					%input#singlepage(type="radio" name="pagemode")
+					%label(for="singlepage" data-localize="reader.Single")
+					%input#doublepage(type="radio" name="pagemode" checked="checked")
+					%label(for="doublepage" data-localize="reader.Double")
+
+				%span#readdirection(data-toggle="buttons-radio")
+					%input#readtoleft(type="radio" name="readdirection" checked="checked")
+					%label(for="readtoleft" data-localize="reader.ReadToLeft")
+					%input#readtoright(type="radio" name="readdirection")
+					%label(for="readtoright" data-localize="reader.ReadToRight")
+
+				%span#itemsheight(data-toggle="buttons-radio")
+					%input#normalheight(type="radio" name="itemsheight" checked="checked")
+					%label(for="normalheight" data-localize="reader.Normal")
+					%input#fullheight(type="radio" name="itemsheight")
+					%label(for="fullheight" data-localize="reader.Full")
+
+				%span#barmode(data-toggle="buttons-radio")
+					%input#nobar(type="radio" name="barmode" checked="checked")
+					%label(for="nobar" data-localize="reader.NoBlackBar")
+					%input#yesbar(type="radio" name="barmode")
+					%label(for="yesbar" data-localize="reader.BlackBar")
+
+				%span#primarypage(data-toggle="buttons-radio")
+					%input#pageeven(type="radio" name="primarypage")
+					%label(for="pageeven" data-localize="reader.Even")
+					%input#pageodd(type="radio" name="primarypage")
+					%label(for="pageodd" data-localize="reader.Odd")
+
+				%button#gohome(data-localize="reader.Home")
+
+				%button#closemenu(data-localize="reader.Close")
+
+			%div.d_row
+				%div.ps.ps-1
+					%input#pageslider-value(disabled)
+				%div.ps.ps-2
+					%div#pageslider
