@@ -161,11 +161,33 @@ $(function(e) {
 	});
 
 	// show/hide menu
-	$('#wrapper').on('click', function(e) {
-		e.stopPropagation();
-		togglemenu();
-	});
+	if (hasTouch) {
+		$('#wrapper').on('click', function(e) {
+			e.stopPropagation();
+			togglemenu();
+		});
+	}
+	else {
 
+		// prevent swipe triggering menu when using mouse
+		$('#wrapper').on('mousedown', function(e) {
+			window.wrapperMouseLastPos = {
+				x: e.originalEvent.pageX,
+				y: e.originalEvent.pageY
+			};
+		});
+		$('#wrapper').on('mouseup', function(e) {
+			var x = e.originalEvent.pageX;
+			var y = e.originalEvent.pageY;
+
+			// moved, so no menu
+			if (Math.abs(window.wrapperMouseLastPos.x - x) > 10) return;
+			if (Math.abs(window.wrapperMouseLastPos.y - y) > 10) return;
+
+			togglemenu();
+		});
+	}
+	
 	// change page when slider is moved
 	$('#pageslider').on('change', function() {
 		goToPage( $(this).val() );
