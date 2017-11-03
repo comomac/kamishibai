@@ -18,41 +18,44 @@ var date = new Date();
 // set battery
 var battery_level = '-1';
 
+// how long it takes to trigger actions in ms
+var onFlipActionDelay = 1000;
+
 
 function readBook(bc, bp) {
+	console.log('readBook', arguments)
 	// bc, bookcode
 	// bp, bookpage
+
+	// destroy exiting gallery already exists
+	destroyGallery(false);
+
+	// set screen size so if the image is resized, server remember the screen size
+	setScreenSize();
 
 	$.get('/listbooks', { bookcodes: bc }, function(jData) {
 		$('#container').removeClass('hidden');
 
-		for (var bc1 in jData) {
-			book = jData[bc1];
+		book = jData[bc];
 
-			book.bookcode = bc1;
-			book.lastpage = bp || book.page || 1;
+		book.bookcode = bc;
+		book.lastpage = bp || book.page || 1;
 
-			$('#booktitle').html('<div>' + book.title + '</div>');
+		$('#booktitle').html('<div>' + book.title + '</div>');
 
-			// set #pageslider max
-			$('#pageslider').attr('max', book.pages);
-			$('#pageslider').val(book.lastpage);
+		// set #pageslider max
+		$('#pageslider').attr('max', book.pages);
+		$('#pageslider').val(book.lastpage);
 
-			// create gallery
-			createGallery();
+		// set location hash if not set or diff
+		var hstr = '#book=' + book.bookcode + '&page=' + book.lastpage;
+		if (window.location.hash !== hstr) window.location.hash = hstr;
 
-			// set location hash
-			window.location.hash = 'book=' + book.bookcode + '&page=' + book.lastpage;
+		// create gallery
+		createGallery(bp);
 
-			// put the slider on correct page
-			setSliderPage();
-
-			// force trigger hashchange to load correct page
-			window.dispatchEvent(new HashChangeEvent('hashchange'));
-
-			break;
-		}
-
+		// force trigger hashchange to load correct page
+		// window.dispatchEvent(new HashChangeEvent('hashchange'));
 	});
 }
 
@@ -63,7 +66,7 @@ function updateDivCurrentInfo(page) {
 		$('#pageCounter').html( gallery.pageIndex + '/' + book.pages );
 	}
 	$('#clock').html( date.toTimeString().slice(0,5) );
-	// $('#battery').html( '&#128267;' + battery_level); // ??? !!!
+	$('#battery').html( '&#128267;' + battery_level);
 }
 
 function sliderValue(el, e) {
@@ -96,26 +99,23 @@ function sliderValue(el, e) {
 
 
 // destroy and remove the gallery
-function destroyGallery() {
-	gallery.destroy;
+function destroyGallery(resetHash) {
+	if (gallery) gallery.destroy;
 	$('#wrapper').empty();
 
 	// remove listener
 	$(window).unbind('hashchange');
 	$(window).unbind('keydown');
 
+	if (resetHash === false) return;
+
 	// clear hash
 	window.location.hash = '';
 }
 
 // create the gallery
-function createGallery() {
-	setScreenSize();
-
+function createGallery(goPage) {
 	//document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
-
-	// global
-	window.imageQueue = [];
 
 	// initialize gallery
 	var el,
@@ -152,7 +152,7 @@ function createGallery() {
 		el = document.createElement('div');
 		el.id = 'swipeview-div-' + i;
 		el.className = 'loading';
-		el.innerHTML = i + 1;
+		// el.innerHTML = i + 1;
 		gallery.masterPages[i].appendChild(el);
 
 		el = document.createElement('img');
@@ -167,10 +167,14 @@ function createGallery() {
 		}
 		gallery.masterPages[i].appendChild(el);
 	}
+	// stagger loading image to reduce load
+	staggerImages(goPage);
 
 	gallery.onFlip(function () {
 		console.log('flip event!');
-		$('#battery').html(112)
+		// global
+		if (!window.timerOnFlipSlide) window.window.timerOnFlipSlide = {};
+
 		var el,
 			upcoming,
 			i;
@@ -185,11 +189,40 @@ function createGallery() {
 
 				el = gallery.masterPages[i].querySelector('img');
 				el.className = 'loading';
-				el.removeAttribute('src');
-				// el.src = '';
-				// el.src = slides[upcoming].img;
+
+				// called by staggerImages
+				if (window.stopOnFlipImg) {
+					el.removeAttribute('src');
+				}
+				// normal flip
+				else {
+					// if (window.timerOnFlipSlide[i]) {
+					// 	console.log('stop load image!', i)
+					// 	clearTimeout(window.timerOnFlipSlide[i]);
+					// 	window.timerOnFlipSlide[i] = false;
+					// }
+
+					// window.timerOnFlipSlide[i] = setTimeout(function() {
+					// 	console.log('load image!', this.src)
+					// 	this.el.src = this.src;
+					// }.bind({
+					// 	el: el,
+					// 	src: slides[upcoming].img
+					// }), onFlipActionDelay);
+
+					el.src = slides[upcoming].img;
+				}
 			}
+			// else {
+			// 	if (window.timerOnFlipSlide[i]) {
+			// 		console.log('stop load image!!!', i)
+			// 		clearTimeout(window.timerOnFlipSlide[i]);
+			// 		window.timerOnFlipSlide[i] = false;
+			// 	}
+			// }
 		}
+		// reset
+		window.stopOnFlipImg = false;
 
 		// get current page
 		var pg = gallery.pageIndex;
@@ -204,10 +237,24 @@ function createGallery() {
 		document.title = "(" + pg + "/" + book.pages + ")";
 
 		// set the page hash
+		window.noHashchange = true; // make sure no hashchange is triggered
 		window.location.hash = fullhash(pg);
-		
-		setBookmark(book.bookcode, pg);
-		setSliderPage();
+
+		// set bookmark only if stopped at page
+		if (window.timerOnFlipSlide.bookmark) {
+			clearTimeout(window.timerOnFlipSlide.bookmark);
+			window.timerOnFlipSlide.bookmark = false;
+		}
+		window.timerOnFlipSlide.bookmark = setTimeout(function() {
+			setBookmark(this.bookcode, this.pg);
+		}.bind({
+			bookcode: book.bookcode,
+			pg: pg
+		}), onFlipActionDelay);
+
+		// set the slider displayed page
+		$('#pageinput').val(pg);
+		$('#pageslider').val(pg);
 	});
 
 	gallery.onMoveOut(function () {
@@ -235,16 +282,29 @@ function createGallery() {
 	});
 	// end of gallery code
 
+	// go to page if specified
+	if (goPage) {
+		// launch a moment later, to go around loading issue
+		window.setTimeout( function(e) { goToPage(goPage); }, 300);
+	}
 
 	// now add listener
 
 	// hash change
 	$(window).bind('hashchange', function() {
+		// do no trigger, because of onFlip
+		if (window.noHashchange) {
+			// reset
+			window.noHashchange = false;
+			return;
+		}
+
+		// replace the history
 		if (getpage() < 1) {
 			window.location.replace( '#' + fullhash( 1 ) );
 		}
 		else if (getpage() > book.pages) {
-			window.location.hash = fullhash( book.pages );
+			window.location.replace( '#' + fullhash( book.pages ) );
 		}
 
 		// launch a moment later, to go around loading issue
@@ -311,44 +371,12 @@ function isEasternBook() {
 	return ( $('#readdirection :radio:checked').attr('id') == 'readtoleft' ) ? true : false;
 }
 
-function loadImage() {
-	var dat = window.imageQueue.shift();
-	
-	// double trigger, stop
-	if (window.currentImage && window.currentImage.url === dat.url) return;
-
-	window.currentImage = dat;
-
-	var img = el = $('<img>');
-	img.on('load', function() {
-		// console.log('loaded image in background', this.dat)
-
-		// change img src
-		var el = $(this.dat.igal);
-		el.find('img').attr('src', this.dat.url).removeClass('loading');
-		el.find('div').removeClass('loading');
-		el.css('visibility','visible');
-
-		// do more if exists
-		if (window.imageQueue && window.imageQueue.length > 0) {
-			loadImage();
-		}
-		// all done, clear
-		else {
-			window.currentImage = false;
-		}
-	}.bind({
-		dat: dat
-	}));
-	// exec
-	// console.log('starting', dat)
-	img.attr('src', dat.url);
-}
-
 // go to particular page
 // in relative to book
 // not relative to gallery, which u can find out by page - 1
 function goToPage(page) {
+	page = Number(page);
+	console.log('going to page', page);
 	if (page < 1) return false;
 
 	if (isEasternBook()) {
@@ -358,10 +386,10 @@ function goToPage(page) {
 		gallery.goToPage(page - 1);
 	}
 
+	staggerImages(page);
+}
 
-// new
-	window.imageQueue = [];
-
+function staggerImages(page) {
 	var i;
 	if (isEasternBook()) {
 		i = book.pages - page;
@@ -369,6 +397,9 @@ function goToPage(page) {
 	else {
 		i = page - 1;
 	}
+
+	// global
+	window.stopOnFlipImg = true;
 	window.imageQueue = [
 		// current page
 		{
@@ -389,8 +420,40 @@ function goToPage(page) {
 
 	// do first image
 	loadImage();
+}
 
-// new end
+function loadImage() {
+	var dat = window.imageQueue.shift();
+	
+	// double trigger, stop
+	if (window.currentImage && window.currentImage.url === dat.url) return;
+
+	window.currentImage = dat;
+
+	var img = el = $('<img>');
+	img.on('load', function() {
+		console.log('loaded image in background', this.dat)
+
+		// change img src
+		var el = $(this.dat.igal);
+		el.find('img').attr('src', this.dat.url).removeClass('loading');
+		el.find('div').removeClass('loading');
+		el.css('visibility','visible');
+
+		// do more if exists
+		if (window.imageQueue && window.imageQueue.length > 0) {
+			loadImage();
+		}
+		// all done, clear
+		else {
+			window.currentImage = false;
+		}
+	}.bind({
+		dat: dat
+	}));
+	// exec
+	console.log('starting image', dat)
+	img.attr('src', dat.url);
 }
 
 // get the page from hash
@@ -401,13 +464,6 @@ function getpage() {
 	}
 
 	return -1;
-}
-
-
-// set the slider displayed page
-function setSliderPage() {
-	$('#pageinput').val(getpage());
-	$('#pageslider').val(getpage());
 }
 
 // toggle menu

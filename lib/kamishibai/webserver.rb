@@ -430,6 +430,14 @@ sources = [
 
 		# cbz file loader
 		get '/cbz/*/*' do |bookcode, page|
+			# # fake delay
+			# if $imgNum
+			# 	$imgNum += 1
+			# else
+			# 	$imgNum = 1
+			# end
+			# pp $imgNum
+
 			page = page.to_i
 			cache_control :public, :must_revalidate, :max_age => 3600
 
@@ -455,6 +463,16 @@ sources = [
 			# set content type, png/jpeg/png/gif/etc
 			itype = image_type( image )
 			content_type itype
+
+			# # fake delay
+			# Thread.new {
+			# 	sleep 7
+			# 	$imgNum = 0
+			# 	sleep 7
+			# 	$imgNum = 0
+			# }
+			# sleep 1.5 * $imgNum
+			# $imgNum -= 1
 
 			if width > 0 and height > 0 and $settings.image_resize
 				# resize image
