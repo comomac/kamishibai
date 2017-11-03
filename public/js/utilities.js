@@ -67,15 +67,15 @@ function reload_locale() {
 }
 
 // set screen resolution on the session
-$(function() {
-    $.post('/screen', { width: screen.width, height: screen.height }, function(json) {
+function setScreenSize() {
+    $.post('/screen', { width: window.innerWidth, height: window.innerHeight }, function(json) {
         if (json.outcome == 'success') {
             // do something with the knowledge possibly?
         } else {
             alert('Unable to let server know what the screen resolution is!');
         }
     },'json');
-});
+}
 
 function uport() {
     // get the url port

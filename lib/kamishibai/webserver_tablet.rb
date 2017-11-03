@@ -209,7 +209,7 @@ module Kamishibai
 
 		# new, combined browse and reader
 		get '/tablet' do
-			cache_control :public, :must_revalidate, :max_age => 3600
+			cache_control :public, :must_revalidate, :max_age => 1
 
 			haml :tablet3, :layout => false
 		end

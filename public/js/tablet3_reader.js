@@ -63,7 +63,7 @@ function updateDivCurrentInfo(page) {
 		$('#pageCounter').html( gallery.pageIndex + '/' + book.pages );
 	}
 	$('#clock').html( date.toTimeString().slice(0,5) );
-	$('#battery').html( '&#128267;' + battery_level);
+	// $('#battery').html( '&#128267;' + battery_level); // ??? !!!
 }
 
 function sliderValue(el, e) {
@@ -110,7 +110,12 @@ function destroyGallery() {
 
 // create the gallery
 function createGallery() {
+	setScreenSize();
+
 	//document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+
+	// global
+	window.imageQueue = [];
 
 	// initialize gallery
 	var el,
@@ -153,7 +158,9 @@ function createGallery() {
 		el = document.createElement('img');
 		el.id = 'swipeview-img-' + i;
 		el.className = 'loading';
-		el.src = slides[page].img;
+		el.removeAttribute('src');
+		// el.src = '';
+		// el.src = slides[page].img;
 		el.onload = function () {
 			this.className = '';
 			this.previousSibling.className = '';
@@ -163,6 +170,7 @@ function createGallery() {
 
 	gallery.onFlip(function () {
 		console.log('flip event!');
+		$('#battery').html(112)
 		var el,
 			upcoming,
 			i;
@@ -177,7 +185,9 @@ function createGallery() {
 
 				el = gallery.masterPages[i].querySelector('img');
 				el.className = 'loading';
-				el.src = slides[upcoming].img;
+				el.removeAttribute('src');
+				// el.src = '';
+				// el.src = slides[upcoming].img;
 			}
 		}
 
@@ -301,6 +311,40 @@ function isEasternBook() {
 	return ( $('#readdirection :radio:checked').attr('id') == 'readtoleft' ) ? true : false;
 }
 
+function loadImage() {
+	var dat = window.imageQueue.shift();
+	
+	// double trigger, stop
+	if (window.currentImage && window.currentImage.url === dat.url) return;
+
+	window.currentImage = dat;
+
+	var img = el = $('<img>');
+	img.on('load', function() {
+		// console.log('loaded image in background', this.dat)
+
+		// change img src
+		var el = $(this.dat.igal);
+		el.find('img').attr('src', this.dat.url).removeClass('loading');
+		el.find('div').removeClass('loading');
+		el.css('visibility','visible');
+
+		// do more if exists
+		if (window.imageQueue && window.imageQueue.length > 0) {
+			loadImage();
+		}
+		// all done, clear
+		else {
+			window.currentImage = false;
+		}
+	}.bind({
+		dat: dat
+	}));
+	// exec
+	// console.log('starting', dat)
+	img.attr('src', dat.url);
+}
+
 // go to particular page
 // in relative to book
 // not relative to gallery, which u can find out by page - 1
@@ -313,6 +357,40 @@ function goToPage(page) {
 	else {
 		gallery.goToPage(page - 1);
 	}
+
+
+// new
+	window.imageQueue = [];
+
+	var i;
+	if (isEasternBook()) {
+		i = book.pages - page;
+	}
+	else {
+		i = page - 1;
+	}
+	window.imageQueue = [
+		// current page
+		{
+			igal: '[data-page-index=' + i + ']',
+			url: "/cbz/" + book.bookcode + "/" + page
+		},
+		// next page
+		{
+			igal: '[data-page-index=' + (i+1) + ']',
+			url: "/cbz/" + book.bookcode + "/" + (page + 1)
+		},
+		// prev page
+		{
+			igal: '[data-page-index=' + (i-1) + ']',
+			url: "/cbz/" + book.bookcode + "/" + (page - 1)
+		},
+	];
+
+	// do first image
+	loadImage();
+
+// new end
 }
 
 // get the page from hash

@@ -49,7 +49,7 @@ module Kamishibai
 			end
 
 			# enable caching for public directory
-			# set :static_cache_control, [:public, :max_age => 1]
+			set :static_cache_control, [:public, :max_age => 1]
 		end
 
 		configure :production do
@@ -57,7 +57,7 @@ module Kamishibai
 			disable :raise_errors
 
 			# enable caching for public directory
-			set :static_cache_control, [:public, :max_age => 300]
+			set :static_cache_control, [:public, :max_age => 1] # 300
 		end
 
 		configure do
@@ -204,7 +204,7 @@ module Kamishibai
 
 		# reader page
 		get '/reader/' do
-			cache_control :public, :must_revalidate, :max_age => 3600
+			cache_control :public, :must_revalidate, :max_age => 1
 
 			haml :reader, :layout => false
 		end
@@ -437,11 +437,11 @@ sources = [
 
 			# width/height
 			quality = $settings.default_image_quality
-			# width = session[:width].to_i
-			# height = session[:height].to_i
+			width = session[:width].to_i
+			height = session[:height].to_i
 			# hard set to hd
-			width  = 1080
-			height = 1920
+			# width  = 1080
+			# height = 1920
 
 			# fix/prevent invalid input
 			quality = 0 if quality < 0
