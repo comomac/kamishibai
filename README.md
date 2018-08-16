@@ -10,25 +10,23 @@ Support basic tagging in filenaming, please read file naming convention below.
 
 Settings can change image quality to conserve bandwidth.  
 
-Zipped (CBZ) books are supported.  
+Zipped (CBZ) books are supported, please read file format below.  
+
+I didn't touch the code for years, had a quick touchup to make sure it works. Found lots of old/bad code, but that was written in 2013, so please don't judge too harshly. Some day I will code and make it better when I have time.
 
 Screenshots:
 --------------------------  
-Directory view
+### Directory view  
 ![Directory view](/images/view_browse.jpg)
 
-Tablet Browse view
+### Tablet Browse view  
 ![Tablet Browse view](/images/view_browse.jpg)
 
-Reading
+### Reading  
 ![Reading](/images/reading.jpg)
 
-Settings
+### Settings  
 ![Settings](/images/settings.jpg)
-
-Update:
---------------------------  
-Didn't touch the code for years, had a quick touchup to make sure it works. Found lots of old/bad code, but that was written in 2013, so please don't judge too harshly.
 
 Installation:
 --------------------------
@@ -50,13 +48,13 @@ Linux (Ubuntu/Debian):
 Windows:
 1. Install the [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 2. Choose Ubuntu install
-2. Follow instruction for Linux above
+3. Follow instruction for Linux above
 
 Access:
 --------------------------
-Run program   kamishibai
-Open browser and type  http://127.0.0.1:9999
-Default username and password is admin/admin, please change it for security purpose.
+1. Run program   `kamishibai`
+2. Open browser and type  `http://127.0.0.1:9999`  
+3. Default username and password is admin/admin, please change it for security purpose.
 
 Configuration:
 --------------------------
