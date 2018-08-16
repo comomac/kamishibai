@@ -4,6 +4,8 @@ Kamishibai
 
 Remote manga reader. Read manga anywhere using a web browser.  
 
+Can read using iOS or Android tablet using swipe view. Can also read in desktop using keyboard shortcuts.
+
 It remember where the manga is read upto, so you can resume reading with ease.
 
 Support basic tagging in filenaming, please read file naming convention below. 
@@ -11,6 +13,8 @@ Support basic tagging in filenaming, please read file naming convention below.
 Settings can change image quality to conserve bandwidth.  
 
 Zipped (CBZ) books are supported, please read file format below.  
+
+Has username and password authentication to protect login.
 
 I didn't touch the code for years, had a quick touchup to make sure it works. Found lots of old/bad code, but that was written in 2013, so please don't judge too harshly. Some day I will code and make it better when I have time.
 
@@ -30,7 +34,7 @@ Screenshots:
 
 Installation:
 --------------------------
-gem install kamishibai
+`gem install kamishibai`
   
 
 Installation (extra info):
