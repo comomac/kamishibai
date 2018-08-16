@@ -17,7 +17,7 @@ I didn't touch the code for years, had a quick touchup to make sure it works. Fo
 Screenshots:
 --------------------------  
 ### Directory view  
-![Directory view](/images/view_browse.jpg)
+![Directory view](/images/view_dir.jpg)
 
 ### Tablet Browse view  
 ![Tablet Browse view](/images/view_browse.jpg)
