@@ -2,7 +2,29 @@ Kamishibai
 =========================
 > pronounce kami-shi-bye
 
-Remote manga reader. Read manga anywhere using a web browser.
+Remote manga reader. Read manga anywhere using a web browser.  
+
+It remember where the manga is read upto, so you can resume reading with ease.
+
+Support basic tagging in filenaming, please read file naming convention below. 
+
+Settings can change image quality to conserve bandwidth.  
+
+Zipped (CBZ) books are supported.  
+
+Screenshots:
+--------------------------  
+Directory view
+![Directory view](/images/view_browse.jpg)
+
+Tablet Browse view
+![Tablet Browse view](/images/view_browse.jpg)
+
+Reading
+![Reading](/images/reading.jpg)
+
+Settings
+![Settings](/images/settings.jpg)
 
 Update:
 --------------------------  
@@ -10,24 +32,39 @@ Didn't touch the code for years, had a quick touchup to make sure it works. Foun
 
 Installation:
 --------------------------
+gem install kamishibai
+  
+
+Installation (extra info):
+--------------------------
+
 Mac OS X:  
 1. Install [MacPorts](http://www.macports.org/)  
-2. sudo port install ruby19 rb-rubygems gd2  
-3. sudo gem1.9 install kamishibai
+2. sudo port install ruby25 rb-rubygems gd2  
+3. sudo gem install kamishibai
   
 Linux (Ubuntu/Debian):  
-1. sudo apt-get install ruby1.9.1-full rubygems libgd2-xpm libgd2-xpm-dev  
+1. sudo apt-get install ruby ruby-dev  
 2. sudo gem install kamishibai
+
+Windows:
+1. Install the [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+2. Choose Ubuntu install
+2. Follow instruction for Linux above
 
 Access:
 --------------------------
-Launch browser and type http://127.0.0.1:9999
+Run program   kamishibai
+Open browser and type  http://127.0.0.1:9999
+Default username and password is admin/admin, please change it for security purpose.
 
 Configuration:
 --------------------------
 Config file is written in JSON format. The config file will be located at ~/etc/kamishibai.conf. The config file can also manually selected by appending the config path after the program.  
 
-There is also web configuration panel, goto http://<host>:<port>/config to configure.
+There is also web configuration panel, goto http://host_ip:host_port/config to configure.
+
+
   
 Start:  
 --------------------------
@@ -45,37 +82,10 @@ Ideally, the CBZ file name should be in such format.
   
 For example  
 (Manga) [Yamada Taro] World of Sakura Volume 01.cbz  
-(一般コミック) [山田太郎] 桜の世界 第01巻.cbz
-  
-  
-Problem/Fix 1:
---------------------------
-If the server is very slow to respond to requests. chances are that the Webrick is running with reverse lookup. Disable reverse lookup by editing  
-/usr/lib/ruby/1.9.1/webrick/config.rb  
-change  
-":DoNotReverseLookup => nil,"  
-to  
-":DoNotReverseLookup => true,"
-without the quotes.
-  
-  
-Problem/Fix 3:
---------------------------  
-The new 2.1.* version of GD2 cause breakage to the GD2-FFIJ, so downgrade the GD2 and stick to version 2.0.*. Until the fixes are released.  
-  
-Tested with:
---------------------------
-Server:  
-Mac OS X (10.8)  
-Linux (Ubuntu 12.04)  
-
-Client:  
-Mac OS X 10.8 with Firefox 21, Chrome 27 and Safari 6  
-iPad mini iOS6 with Safari and Chrome  
-Nexus 7 with Chrome and Firefox  
+(一般コミック) [山田太郎] 桜の世界 第01巻.cbz  
   
   
 License:
 --------------------------
 BSD 3-clause
-Mac Ma gitmac at runbox.com (C) 2013 Copyright
+Mac Ma gitmac at runbox.com (C) 2013-2018 Copyright
