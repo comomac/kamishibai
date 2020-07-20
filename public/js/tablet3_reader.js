@@ -453,7 +453,11 @@ function loadImage() {
 	}));
 	// exec
 	console.log('starting image', dat)
-	img.attr('src', dat.url);
+	if (typeof dat.url === "string") {
+		img.attr('src', dat.url.replace("null","1"));
+	} else {
+		console.error("dat.url not a string");
+	}
 }
 
 // get the page from hash
