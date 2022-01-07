@@ -117,9 +117,8 @@ function reload_books( bookcodes, options ) {
 			var apage = 1;
 			if (!!book.page) apage = book.page;
 			a.attr('href', '#book=' + bookcode + '&page=' + apage);
-			a.on('click', { bookcode: bookcode }, function(event) {
-				console.log(event.data.bookcode);
-				readBook(event.data.bookcode);
+			a.on('click', { bookcode: bookcode, bookpage: apage }, function(event) {
+				readBook(event.data.bookcode, apage);
 			});
 
 			var img = $('<img>');
