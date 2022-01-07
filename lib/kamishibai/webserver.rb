@@ -6,7 +6,6 @@ require 'haml'
 require 'pp' if $debug
 require 'sinatra'
 require 'sinatra/base'
-require 'sinatra/reloader' if development? and Gem::Specification::find_all_by_name('sinatra-reloader').any?
 #require 'rack/contrib/try_static'
 require 'rbconfig'
 
@@ -25,40 +24,6 @@ module Kamishibai
 
 		# smaller, quicker web server
 		set :server, 'thin' unless RUBY_PLATFORM == 'java'
-
-		if $debug
-			set :environment, :development
-		else
-			set :environment, :production
-		end
-
-		configure :development do
-			enable :logging
-			if Gem::Specification::find_all_by_name('sinatra-reloader').any?
-				register Sinatra::Reloader
-
-				also_reload 'kamishibai/functions'
-				also_reload 'kamishibai/patches'
-				also_reload 'kamishibai/book'
-				also_reload 'kamishibai/database'
-
-				# reload webserver plug-ins
-				Dir.glob( settings.root + '/../**/webserver_*.rb' ) { |f|
-					also_reload f.gsub('.rb','')
-				}
-			end
-
-			# enable caching for public directory
-			set :static_cache_control, [:public, :max_age => 1]
-		end
-
-		configure :production do
-			disable :logging
-			disable :raise_errors
-
-			# enable caching for public directory
-			set :static_cache_control, [:public, :max_age => 1] # 300
-		end
 
 		configure do
 			# listen to all interface
@@ -97,6 +62,7 @@ module Kamishibai
 			mime_type :png, 'image/png'
 			mime_type :gif, 'image/gif'
 			mime_type :css, 'text/css'
+			mime_type :html, 'text/html'
 			mime_type :javascript, 'application/javascript'
 		end
 
@@ -200,13 +166,6 @@ module Kamishibai
 		def self.get_or_post(path, opts={}, &block)
 			get(path, opts, &block)
 			post(path, opts, &block)
-		end
-
-		# reader page
-		get '/reader/' do
-			cache_control :public, :must_revalidate, :max_age => 1
-
-			haml :reader, :layout => false
 		end
 
 		# list sources
@@ -372,10 +331,10 @@ sources = [
 							readstate = 'read5'
 						end
 
-						href = '/tablet#book=' + bookcode + '&page=' + page.to_s
+						href = '/tablet.html#book=' + bookcode + '&page=' + page.to_s
 					else
 						readstate = 'read0'
-						href = '/tablet#book=' + bookcode
+						href = '/tablet.html#book=' + bookcode
 					end
 
 					html << "\t<li class=\"file ext_#{ext}\"><a href=\"#{href}\" bookcode=\"#{bookcode}\" rel=\"#{fp}\">#{img}<span class=\"#{readstate}\">#{f.escape_html}</span><span class=\"badge badge-info bookpages\">#{book.pages}</span></a></li>\n"

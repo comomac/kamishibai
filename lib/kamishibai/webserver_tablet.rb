@@ -207,13 +207,6 @@ module Kamishibai
 			html
 		end
 
-		# new, combined browse and reader
-		get '/tablet' do
-			cache_control :public, :must_revalidate, :max_age => 1
-
-			haml :tablet3, :layout => false
-		end
-
 		# list books ver2
 		get '/listbooks' do
 			content_type :json
