@@ -760,11 +760,8 @@ function toggleFullScreen(id) {
 // #
 // ########################################################################################
 
- // global variables
- var hasTouch = 'ontouchstart' in window; //find out if device is touch device or not
-
-// for saving cycle when typing keyword, delay search instead send immediately
-var timerKeywordChange = 0;
+// global variables
+var hasTouch = 'ontouchstart' in window; //find out if device is touch device or not
 
 // page init
 $(function(e) {
@@ -820,30 +817,16 @@ $(function(e) {
 	});
 
 	// #searchbox event
-	$("#searchbox").on('change', function(e) {
-
-		// reload the list with keyword matches
-		prepare_lists();
-
-	}).on('keydown', function(e) {
-
-		// save cycles, stop the timer to send query when key is pressed
-		clearTimeout( timerKeywordChange );
-
-	}).on('keyup', function(e) {
+	$("#searchbox").on('keyup', function(e) {
 		e = e || window.event;
 
 		if (e.keyCode == 13) {
 			// enter key, unfocus the searchbox
 			$("#searchbox").blur();
-			return true;
-		}
 
-		// save cycles, only sent query when search is truly finished typing
-		timerKeywordChange = setTimeout( function() {
+			// search
 			prepare_lists();
-
-		}, 1200);
+		}
 	});
 
 	// run if book choice is selected, load with delay for the button group DOM to catch up
@@ -874,11 +857,6 @@ $(function(e) {
 		$('.btn-group > button').removeClass('active');
 		$(this).addClass('active');
 
-		// save cycles if search text isnt changed
-		// if ( sb.val() === $.cookie(uport() + '.keyword') || sb.val() === $.cookie(uport() + '.author') ) {
-		// 	return false;
-		// }
-
 		prepare_lists();
 	});
 
@@ -889,10 +867,6 @@ $(function(e) {
 		var p = getHashParams().page || 1;
 
 		readBook( getHashParams().book, p );
-	}
-	else {
-		// reload leftbox
-		// prepare_lists( get_menu_url() );
 	}
 
 	/*
@@ -1009,7 +983,7 @@ $(function(e) {
 			<div id="searchbox-holder">
 				<div class="input-group">
 					<span class="input-group-addon">
-						<i class="glyphicon glyphicon-search"></i>
+						<i class="glyphicon glyphicon-search" onclick="prepare_lists()"></i>
                     </span>
 					<input class="form-control" id="searchbox" type="text" name="searchbox" value="" placeholder="search">
                 </div>
