@@ -143,6 +143,12 @@ def cbz_pages?( zfile )
 	return i
 end
 
+# allow natural sort for filename
+class String
+	def naturalized
+		scan(/[^\d\.]+|[\d\.]+/).collect { |f| f.match(/\d+(\.\d+)?/) ? f.to_f : f }
+	end
+end
 
 # cbz file accessor, give file name and page and you shall receive
 def open_cbz( zfile, page = 1, options = {} )
@@ -154,7 +160,7 @@ def open_cbz( zfile, page = 1, options = {} )
 					objs << zobj
 				end
 			}
-			objs.sort!
+			objs.sort_by! { |zobj| zobj.name.to_s.naturalized }
 
 			if objs.length == 0
 				puts "error: no image detected. #{zfile}"
