@@ -93,16 +93,20 @@ function reload_books( bookcodes, options ) {
 		for (bookcode in jData) {
 			book = jData[bookcode];
 
-			var title = $('<div>');
-			title.html(book.title);
-			el.append(title);
-
+			// show author first, otherwise long title might block author
 			var author = $('<div>');
 			author.html(book.author);
 			author.on('click', function() {
 				exe_show_author(book.author);
 			});
 			el.append(author);
+
+			// show book names if it is not auther listing
+			if (menuNumber !== 5) {
+				var title = $('<div>');
+				title.html(book.title);
+				el.append(title);
+			}
 			break;
 		}
 
