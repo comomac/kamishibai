@@ -71,6 +71,8 @@ function reload_leftbox(url, keyword) {
 
 // load books from the bookcodes
 function reload_books( bookcodes, options ) {
+	var menuNumber = get_menu_selection_number();
+
 	if (bookcodes === undefined) {
 		$('#bookinfo').empty();
 		$('#books').empty();
@@ -127,7 +129,14 @@ function reload_books( bookcodes, options ) {
 			a.append(img);
 
 			var span = $('<span>');
-			span.html(book.sname);
+
+			// show book names if author book listing
+			if (menuNumber === 5) {
+				span.html(book.title);
+			} else {
+				span.html(book.sname);
+			}
+		
 			// set page progress
 			var page  = book.page || 0;
 			var pages = book.pages;
@@ -191,6 +200,12 @@ function get_menu_selection_number() {
 	if (id) {
 		n = parseInt( id.replace('bc','') );
 	}
+
+	// 1 all
+	// 2 new
+	// 3 reading
+	// 4 finished
+	// 5 author
 
 	return n || 1;
 }
