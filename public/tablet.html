@@ -18,6 +18,7 @@
 		<script src="/vendor/js/jquery.cookie.js"></script>
 		<script src="/vendor/js/jquery.scrollTo-1.4.3.1.js"></script>
 		<script src="/vendor/js/bootstrap.js"></script>
+		<script src="/vendor/js/iscroll-infinite.js"></script>
 		<script src="/js/swipeview-k.js"></script>
 		
 		<script src="/js/utilities.js"></script>
@@ -33,16 +34,12 @@
 function reload_leftbox(url, keyword) {
 	// retrive data
 	$.post(url, { keyword: keyword }, function(data) {
-		var el = $('#leftbox');
-		el.empty();
-		el.append(data);
-
-		$('.li-title').on('click', function() {
-			// set the last title selected on cookie
-			$.cookie(uport() + '.lasttitle', $(this).text(), { path: '/' });
-
-			reload_books( $(this).attr('bookcodes'), $(this).attr('options') );
-		});
+		// convert string to array and save
+		myScrollUL = data
+		// restart iscroll
+		if (!!myScroll) myScroll.destroy();
+		iScrollLoad(myScrollUL.length);
+		myScroll.updateCache(0, myScrollUL.slice(0, 60));
 
 		var elem = $('.li-title:contains("' + $.cookie(uport() + '.lasttitle') + '")');
 		if (elem.length > 0) {
@@ -279,7 +276,6 @@ function readBook(bc, bp) {
 		// window.dispatchEvent(new HashChangeEvent('hashchange'));
 	});
 }
-
 
 function updateDivCurrentInfo(page) {
 
@@ -965,7 +961,142 @@ $(function(e) {
 	};
 
 });
+
+
+var myScroll;
+var myScrollUL = []; // store array of ul data for #iscroller-ul to use
+
+function iScrollLoad(maxLength) {
+	if (!!!maxLength) maxLength = 0;
+	
+	$('.irow').text('').prop('onclick', null).off('click');
+	
+	myScroll = new IScroll('#iwrapper', {
+		mouseWheel: true,
+		infiniteElements: '#iscroller .irow',
+		infiniteLimit: maxLength,
+		dataset: iScrollRequestData,
+		dataFiller: iScrollUpdateContent,
+		cacheSize: 60
+	});
+}
+
+function iScrollRequestData(start, count) {
+	var data = myScrollUL.slice(start, start+count);
+	
+	// skip if not ready
+	if (!!!myScroll) return;
+
+	myScroll.updateCache(start, data);
+}
+
+function iScrollUpdateContent(el, data) {
+	if (!!!data) return;
+
+	el.removeAttribute("author");
+	el.removeAttribute("title");
+	el.removeAttribute("bookcodes");
+	el.removeAttribute("options");
+
+	el.setAttribute("bookcodes", data.bookcodes);
+
+	switch (get_menu_selection_number()) {
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+			el.innerText = data.title;
+			break;
+		case 5:
+			// author
+			el.innerText = data.author;
+			el.setAttribute("options", "sortbyauthor");
+			break;
+	}
+
+
+	el.onclick = undefined;
+	el.onclick = function(event) {
+		// set the last title selected on cookie
+		$.cookie(uport() + '.lasttitle', $(this).text(), { path: '/' });
+
+		reload_books( $(this).attr('bookcodes'), $(this).attr('options') );
+	}
+}
+
+document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
 		</script>
+
+<!--
+########################################################################################
+#
+#      css style
+#
+########################################################################################
+-->
+<style>
+
+#iwrapper {
+	position: absolute;
+	z-index: 1;
+	top: 81px;
+	bottom: 0px;
+	left: 0;
+	width: 50%;
+	background: #ccc;
+	overflow: hidden;
+}
+
+#iscroller {
+	position: absolute;
+	z-index: 1;
+	-webkit-tap-highlight-color: rgba(0,0,0,0);
+	width: 100%;
+	-webkit-transform: translateZ(0);
+	-moz-transform: translateZ(0);
+	-ms-transform: translateZ(0);
+	-o-transform: translateZ(0);
+	transform: translateZ(0);
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-text-size-adjust: none;
+	-moz-text-size-adjust: none;
+	-ms-text-size-adjust: none;
+	-o-text-size-adjust: none;
+	text-size-adjust: none;
+}
+
+#iscroller ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	width: 100%;
+	text-align: left;
+	position: relative;
+}
+
+#iscroller li {
+	position: absolute;
+	width: 100%;
+	top: 0;
+	left: 0;
+	-webkit-transform: translateZ(0);
+	-moz-transform: translateZ(0);
+	-ms-transform: translateZ(0);
+	-o-transform: translateZ(0);
+	transform: translateZ(0);
+	padding: 0 10px;
+	height: 40px;
+	line-height: 40px;
+	border-bottom: 1px solid #ccc;
+	border-top: 1px solid #fff;
+	background-color: #fafafa;
+	font-size: 16px;
+}
+</style>
 
     </head>
 
@@ -992,9 +1123,44 @@ $(function(e) {
 					<input class="form-control" id="searchbox" type="text" name="searchbox" value="" placeholder="search">
                 </div>
             </div>
-			<div id="leftbox-div">
-				<ul id="leftbox" data-role="listview" data-theme="d" data-autodividers="true" data-filler-theme="d"></ul>
-            </div>
+			<div id="iwrapper">
+				<div id="iscroller">
+					<ul id="iscroller-ul">
+						<li class="irow">Row 1</li>
+						<li class="irow">Row 2</li>
+						<li class="irow">Row 3</li>
+						<li class="irow">Row 4</li>
+						<li class="irow">Row 5</li>
+						<li class="irow">Row 6</li>
+						<li class="irow">Row 7</li>
+						<li class="irow">Row 8</li>
+						<li class="irow">Row 9</li>
+						<li class="irow">Row 10</li>
+						<li class="irow">Row 11</li>
+						<li class="irow">Row 12</li>
+						<li class="irow">Row 13</li>
+						<li class="irow">Row 14</li>
+						<li class="irow">Row 15</li>
+			
+						<li class="irow">Row 16</li>
+						<li class="irow">Row 17</li>
+						<li class="irow">Row 18</li>
+						<li class="irow">Row 19</li>
+						<li class="irow">Row 20</li>
+						<li class="irow">Row 21</li>
+						<li class="irow">Row 22</li>
+						<li class="irow">Row 23</li>
+						<li class="irow">Row 24</li>
+						<li class="irow">Row 25</li>
+						<li class="irow">Row 26</li>
+						<li class="irow">Row 27</li>
+						<li class="irow">Row 28</li>
+						<li class="irow">Row 29</li>
+						<li class="irow">&nbsp;</li>
+					</ul>
+				</div>
+			</div>	
+
 			<div id="bookinfo"></div>
 			<div id="rcontainer">
 				<ul id="books"></ul>

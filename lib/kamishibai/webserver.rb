@@ -6,6 +6,7 @@ require 'haml'
 require 'pp' if $debug
 require 'sinatra'
 require 'sinatra/base'
+require 'sinatra/json'
 #require 'rack/contrib/try_static'
 require 'rbconfig'
 
