@@ -120,21 +120,11 @@ module Kamishibai
 
 		# redirect index page
 		get '/' do
-			redirect '/browse/'
-			# if request.user_agent =~ /(android|tablet|iphone|ipad)/i
-			# 	redirect '/browse_tablet/'
-			# else
-			# 	redirect '/browse/'
-			# end
+			redirect '/browse.html'
 		end
 
 		get '/statistics' do
 			haml :statistics, :layout => false
-		end
-
-		# browse page with folder/file navigation
-		get '/browse/' do
-			haml :browse, :layout => false
 		end
 
 		get '/bookinfo/*' do |bookcode|
@@ -390,14 +380,6 @@ sources = [
 
 		# cbz file loader
 		get '/cbz/*/*' do |bookcode, page|
-			# # fake delay
-			# if $imgNum
-			# 	$imgNum += 1
-			# else
-			# 	$imgNum = 1
-			# end
-			# pp $imgNum
-
 			page = page.to_i
 			cache_control :public, :must_revalidate, :max_age => 3600
 

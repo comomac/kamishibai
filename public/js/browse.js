@@ -15,7 +15,7 @@ var last_window_width = window.innerWidth;
 var isDeleteMode = false;
 
 // set the last browse selected on cookie
-$.cookie(uport() + '.lastbrowse', '/browse/', { path: '/' });
+$.cookie(uport() + '.lastbrowse', '/browse.html', { path: '/' });
 
 // detect os
 var OSName="Unknown OS";
