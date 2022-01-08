@@ -288,12 +288,14 @@ function readBook(bc, bp) {
 }
 
 function updateDivCurrentInfo(page) {
-
 	if (typeof page === 'number') {
 		$('#pageCounter').html( gallery.pageIndex + '/' + book.pages );
 	}
 	$('#clock').html( date.toTimeString().slice(0,5) );
-	$('#battery').html( '&#128267;' + battery_level);
+
+	getBatteryLevel().then(function(batteryPercentText) {
+		$('#battery').html( '&#128267;' + batteryPercentText);
+	});
 }
 
 function sliderValue(el, e) {
@@ -954,13 +956,8 @@ $(function(e) {
 		window.dispatchEvent(new HashChangeEvent('hashchange'));
 	});
 
-	updateBatteryLevel();
 	updateDivCurrentInfo();
 	window.setInterval( function() {
-		// update battery level
-		updateBatteryLevel();
-
-		// show clock
 		updateDivCurrentInfo();
 	}, 1000 * 60);
 

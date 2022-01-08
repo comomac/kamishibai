@@ -37,7 +37,7 @@ $.jobqueue = {
                     setTimer(time);
                 }
             }, time || 2);
-        }
+        };
 
         if (fn) {
             $.jobqueue._queue.push([fn, context, time]);
@@ -158,13 +158,18 @@ function isImageCached(src) {
     return image.complete;
 }
 
-function updateBatteryLevel() {
+function getBatteryLevel() {
+    // return -1 or 0-100%
+
     if (navigator.battery) {
         // firefox support
-        battery_level = Math.floor(navigator.battery.level * 100) + '%';
+        return Promise.resolve(Math.floor(navigator.battery.level * 100) + "%");
     }
-    else if (navigator.getBattery()) {
+    if (navigator.getBattery) {
         // chrome support
-        navigator.getBattery().then(function(battery) { battery_level =  Math.floor(battery.level * 100) + '%' });
+        return navigator.getBattery().then(function(battery) {
+            return Math.floor(battery.level * 100) + "%";
+        });
     }
+    return Promise.resolve("-1");
 }
