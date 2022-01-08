@@ -6,7 +6,7 @@ License: refer to LICENSE file
 // global variables
 var hasTouch = 'ontouchstart' in window; //find out if device is touch device or not
 var items_in_row = 0; // number of items in a row (inside #container)
-var lastbook = getHashParams()['lastbook'];
+var lastbook = getHashParams("lastbook");
 if (!lastbook) lastbook = '';
 var isBookSelectMode = false;
 var isMobile = navigator.userAgent.match(/(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i)
@@ -37,12 +37,11 @@ if (!console.log) {
 
 function homepage() {
 	// get dir from hash
-	var hashes = getHashParams();
-	var dir = hashes['dir'].split('/');
+	var dir = getHashParams("dir").split('/');
 
 	dir.pop();
 
-	window.location.hash = 'dir=' + dir.join('/')
+	window.location.hash = 'dir=' + dir.join('/');
 	return false;
 }
 
@@ -52,7 +51,7 @@ function exe_order_by(str) {
 	
 	$.cookie(uport() + '.order_by', str, { path: '/' });
 
-	reload_dir_lists( getHashParams()['dir'], $('#searchbox').val() );
+	reload_dir_lists( getHashParams("dir"), $('#searchbox').val() );
 }
 
 function reload_sources() {
@@ -193,7 +192,7 @@ function countdownDelete(el, time) {
 			var t = $('#trash');
 
 			if (t.length <= 0) {
-				var li_link = getHashParams()['dir'] + '/Trash/';
+				var li_link = getHashParams("dir") + '/Trash/';
 				var li_trash = '<li class="directory collapsed trash" id="trash"><a href="#dir=' + li_link + '"><img src="/images/trash-full-mini.png" /><span>Trash</span></a></li>'
 				$('#ul-lists').append(li_trash);
 			}

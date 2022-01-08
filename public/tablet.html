@@ -287,7 +287,7 @@ function readBook(bc, bp) {
 	});
 }
 
-function updateDivCurrentInfo(page) {
+function updateReaderFooter(page) {
 	if (typeof page === 'number') {
 		$('#pageCounter').html( gallery.pageIndex + '/' + book.pages );
 	}
@@ -460,7 +460,7 @@ function createGallery(goPage) {
 		}
 
 		// update div current info
-		updateDivCurrentInfo(pg);
+		updateReaderFooter(pg);
 
 		// change title according to page
 		document.title = "(" + pg + "/" + book.pages + ")";
@@ -501,7 +501,7 @@ function createGallery(goPage) {
 		el.className += 'loading';
 
 		// update current info
-		updateDivCurrentInfo(pg);
+		updateReaderFooter(pg);
 	});
 
 	gallery.onMoveIn(function () {
@@ -691,7 +691,7 @@ function loadImage() {
 
 // get the page from hash
 function getpage() {
-	var i = parseInt( getHashParams()['page'] );
+	var i = parseInt( getHashParams("page") );
 	if (typeof i == "number" && ! isNaN(i) ) {
 		return i;
 	}
@@ -873,12 +873,12 @@ $(function(e) {
 	});
 
 
-	if (getHashParams().book) {
+	if (getHashParams("book")) {
 		// load book if already specified in hash
 
-		var p = getHashParams().page || 1;
+		var p = getHashParams("page") || 1;
 
-		readBook( getHashParams().book, p );
+		readBook( getHashParams("book"), p );
 	}
 
 	/*
@@ -956,9 +956,9 @@ $(function(e) {
 		window.dispatchEvent(new HashChangeEvent('hashchange'));
 	});
 
-	updateDivCurrentInfo();
+	updateReaderFooter();
 	window.setInterval( function() {
-		updateDivCurrentInfo();
+		updateReaderFooter();
 	}, 1000 * 60);
 
 

@@ -4,7 +4,7 @@ License: refer to LICENSE file
 
 // function to format the hash to object
 // example: #book=abc.zip&page=7 -> $['book']='abc.zip', $['page']=7
-function getHashParams() {
+function getHashParams(singleParam) {
     var hashParams = {};
     var e,
         a = /\+/g,  // Regex for replacing addition symbol with a space
@@ -16,12 +16,18 @@ function getHashParams() {
     while (e = r.exec(q))
        hashParams[d(e[1])] = d(e[2]);
 
+    if (!!singleParam) {
+        // return text
+        return hashParams[singleParam];
+    }
+
+    // return object
     return hashParams;
 }
 
 // return fully formatted hash
 function fullhash(page) {
-	return 'book=' + getHashParams()['book'] + '&page=' + page;
+	return "book=" + getHashParams("book") + "&page=" + page;
 }
 
 // a queue that will make the browser run more responsively
