@@ -46,10 +46,6 @@ function reload_leftbox(url, keyword) {
 		var lastBookcodes = $.cookie(uport() + '.lastBookcodes');
 		for (var obj of myScrollUL) {
 			if (obj.bookcodes.toString() === lastBookcodes) {
-				// scroll to last selected title
-				var lastScrollPos = $.cookie(uport() + '.lastScrollPos');
-				myScroll.scrollTo(0, "-"+lastScrollPos);
-
 				// show books
 				var lastSelectOptions = $.cookie(uport() + '.lastSelectOptions');
 				reload_books(lastBookcodes, lastSelectOptions);
@@ -1040,10 +1036,6 @@ function iScrollUpdateContent(el, data) {
 		
 		// remember last select options
 		$.cookie(uport() + '.lastSelectOptions', options, { path: '/' });
-
-		// remember last selected scroll pos
-		var scrollPos = this.style.transform.match(/\d+px/g)[1];
-		$.cookie(uport() + '.lastScrollPos', parseInt(scrollPos));
 
 		// load books and details
 		reload_books( bookcodes, options );
