@@ -39,25 +39,43 @@ function reload_leftbox(url, keyword) {
 		iScrollLoad(myScrollUL.length);
 		myScroll.updateCache(0, myScrollUL.slice(0, 60));
 
-		var elem = $('.li-title:contains("' + $.cookie(uport() + '.lasttitle') + '")');
-		if (elem.length > 0) {
-			// scroll to last selected title
-			$('#leftbox').scrollTo( elem.eq(0) );
+		// does the book found, if not, select first item in scroll
+		var selectFirst = true;
 
-			// show books
-			var bookcodes = elem.eq(0).attr('bookcodes');
-			reload_books( bookcodes, elem.eq(0).attr('options') );
+		// wait until myScroll is ready
+		var lastBookcodes = $.cookie(uport() + '.lastBookcodes');
+		for (var obj of myScrollUL) {
+			if (obj.bookcodes.toString() === lastBookcodes) {
+				// scroll to last selected title
+				var lastScrollPos = $.cookie(uport() + '.lastScrollPos');
+				myScroll.scrollTo(0, "-"+lastScrollPos);
+
+				// show books
+				var lastSelectOptions = $.cookie(uport() + '.lastSelectOptions');
+				reload_books(lastBookcodes, lastSelectOptions);
+
+				selectFirst = false;
+				break;
+			}
 		}
-		else {
-			// last selected title don't exist, select first available title
-			var el = $('.li-title');
-			if (el.length > 0) {
-				$('#leftbox').scrollTo( el.eq(0) );
 
-				var bookcodes = el.eq(0).attr('bookcodes');
-				reload_books( bookcodes, el.eq(0).attr('options') );
+		if (selectFirst) {
+			// last selected title don't exist, select first available title
+
+			var rows = document.getElementsByClassName("irow");
+			if (rows && rows.length > 0) {
+				var firstRow = rows[0];
+			}
+			
+			if (firstRow) {
+				// found first row
+				var bookCodes = firstRow.getAttribute("bookcodes");
+				var options = firstRow.getAttribute("options");
+
+				reload_books(bookCodes, options);
 			}
 			else {
+				// no row found, reset state to blank
 				reload_books();
 			}
 		}
@@ -68,7 +86,7 @@ function reload_leftbox(url, keyword) {
 function reload_books( bookcodes, options ) {
 	var menuNumber = get_menu_selection_number();
 
-	if (bookcodes === undefined) {
+	if (!!!bookcodes) {
 		$('#bookinfo').empty();
 		$('#books').empty();
 		return false;
@@ -167,9 +185,7 @@ function exe_show_author( author ) {
 }
 
 function prepare_lists(url) {
-
-	if (typeof url === 'undefined') url = get_menu_url();
-
+	if (!!!url) url = get_menu_url();
 
 	var sb  = $('#searchbox');
 	var bcs = $('#bcs');
@@ -989,12 +1005,14 @@ function iScrollRequestData(start, count) {
 }
 
 function iScrollUpdateContent(el, data) {
-	if (!!!data) return;
-
+	// reset
 	el.removeAttribute("author");
 	el.removeAttribute("title");
 	el.removeAttribute("bookcodes");
 	el.removeAttribute("options");
+	el.onclick = undefined;
+
+	if (!!!data) return;
 
 	el.setAttribute("bookcodes", data.bookcodes);
 
@@ -1013,12 +1031,22 @@ function iScrollUpdateContent(el, data) {
 	}
 
 
-	el.onclick = undefined;
 	el.onclick = function(event) {
-		// set the last title selected on cookie
-		$.cookie(uport() + '.lasttitle', $(this).text(), { path: '/' });
+		var bookcodes = this.getAttribute("bookcodes");
+		var options = this.getAttribute("options");
 
-		reload_books( $(this).attr('bookcodes'), $(this).attr('options') );
+		// remember last selected book
+		$.cookie(uport() + '.lastBookcodes', bookcodes, { path: '/' });
+		
+		// remember last select options
+		$.cookie(uport() + '.lastSelectOptions', options, { path: '/' });
+
+		// remember last selected scroll pos
+		var scrollPos = this.style.transform.match(/\d+px/g)[1];
+		$.cookie(uport() + '.lastScrollPos', parseInt(scrollPos));
+
+		// load books and details
+		reload_books( bookcodes, options );
 	}
 }
 
