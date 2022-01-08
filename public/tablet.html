@@ -738,12 +738,12 @@ function toggleFullScreen(id) {
 	var btn = $('#gofullscreen'); // button for toggle full screen
 
 	if (isFullScreen()) {
-		btn.text('full screen');
+		btn.html('<div>full screen</div>');
 
 		exitFullScreen();
 	}
 	else {
-		btn.text('exit full screen');
+		btn.html('<div>exit full screen</div>');
 
 		goFullScreen(id);
 	}
