@@ -127,26 +127,10 @@ module Kamishibai
 			haml :statistics, :layout => false
 		end
 
-		get '/bookinfo/*' do |bookcode|
-			input_check( bookcode, 1)
+		post '/api/book/bookmark' do
+			bookcode = params[:bookcode].untaint
+			page     = params[:page].to_i
 
-			content_type :javascript
-
-			page = @book.page ? @book.page : 'null'
-
-"var book = {
-	bookcode: '#{@book.bookcode}',
-	basename: '#{File.basename( @book.fullpath ).gsub(/\.cbz$/i,'').escape_html}',
-	title:    '#{@book.title.to_s.escape_html}',
-	author:   '#{@book.author.to_s.escape_html}',
-	page:     #{page},
-	pages:    #{@book.pages}
-};
-"
-		end
-
-		get '/setbookmark/*/*' do |bookcode, page|
-			page = page.to_i
 			input_check( bookcode, page )
 
 			$db.set_bookmark(bookcode, page)
@@ -154,24 +138,13 @@ module Kamishibai
 			"bookmarked"
 		end
 
-		def self.get_or_post(path, opts={}, &block)
-			get(path, opts, &block)
-			post(path, opts, &block)
-		end
-
 		# list sources
-		get '/list_sources' do
-			content_type :javascript
-
-			%Q{
-sources = [
-#{$settings.srcs.collect{ |x| "  \"#{x}\"" }.join(",\n")}
-]
-}
+		get '/api/sources' do
+			json $settings.srcs
 		end
 
 		# directory browse page
-		get_or_post '/lists_dir' do
+		post '/api/dir_list' do
 			content_type :text
 			path = File.expand_path( request['dir'].untaint )
 			order_by = request['order_by'].untaint
@@ -305,7 +278,7 @@ sources = [
 					f = File.basename(fp)
 					ext = File.extname(fp)[1..-1]
 
-					img = "<img class='lazy fadeIn fadeIn-1s fadeIn-Delay-Xs' data-original='/thumbnail/#{bookcode}' alt='Loading...' />"
+					img = "<img class='lazy fadeIn fadeIn-1s fadeIn-Delay-Xs' data-original='/api/book/thumb/#{bookcode}' alt='Loading...' />"
 
 					if book.page
 						# prepare the value for the visual read progress
@@ -364,7 +337,7 @@ sources = [
 		end
 
 		# cbz thumbnail
-		get '/thumbnail/*' do |bookcode|
+		get '/api/book/thumb/*' do |bookcode|
 			cache_control :public, :must_revalidate, :max_age => 3600
 
 			# check and setup the variable
@@ -379,7 +352,7 @@ sources = [
 		end
 
 		# cbz file loader
-		get '/cbz/*/*' do |bookcode, page|
+		get '/api/book/page/*/*' do |bookcode, page|
 			page = page.to_i
 			cache_control :public, :must_revalidate, :max_age => 3600
 
@@ -423,16 +396,6 @@ sources = [
 				# give raw
 				image
 			end
-		end
-
-		get '/list_db' do
-			html = "<html><body>\n"
-			p $db.books.length
-			$db.books.each { |bookcode, book|
-				html << "<pre>#{bookcode}  #{book.page.to_s.rjust(3)}/#{book.pages}  #{book.fullpath}</pre>\n"
-			}
-			html << "</body></html>"
-			html
 		end
 	end
 end

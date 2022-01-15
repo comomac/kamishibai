@@ -102,7 +102,7 @@ function reload_books( bookcodes, options ) {
 
 	var bookcode = bookcodes.split(',')[0];
 
-	$.get('/listbooks', { bookcodes: bookcodes, options: options }, function(jData) {
+	$.get('/api/books/info', { bookcodes: bookcodes, options: options }, function(jData) {
 		var el; // html element
 		var bookcode; // str
 		var book;
@@ -149,7 +149,7 @@ function reload_books( bookcodes, options ) {
 			});
 
 			var img = $('<img>');
-			img.attr('src', '/thumbnail/' + bookcode);
+			img.attr('src', '/api/book/thumb/' + bookcode);
 			img.attr('alt', 'Loading...');
 			a.append(img);
 
@@ -273,7 +273,7 @@ function readBook(bc, bp) {
 	// set screen size so if the image is resized, server remember the screen size
 	setScreenSize();
 
-	$.get('/listbooks', { bookcodes: bc }, function(jData) {
+	$.get('/api/books/info', { bookcodes: bc }, function(jData) {
 		$('#container').removeClass('hidden');
 
 		book = jData[bc];
@@ -371,14 +371,14 @@ function createGallery(goPage) {
 		if (isEasternBook()) {
 			// eastern book
 			slides.push( {
-				img: "/cbz/" + book.bookcode + "/" + (book.pages - i + 1),
+				img: "/api/book/page/" + book.bookcode + "/" + (book.pages - i + 1),
 				page: book.pages - i + 1
 			} );
 		}
 		else {
 			// western book
 			slides.push( {
-				img: "/cbz/" + book.bookcode + "/" + i,
+				img: "/api/book/page/" + book.bookcode + "/" + i,
 				page: i
 			} );
 		}
@@ -584,15 +584,8 @@ function setBookmark(bookcode, page) {
 
 	if (book.lastpage == page || page < 1 || page > book.pages) return false;
 
-	$.ajax({
-		url: "/setbookmark/" + bookcode + "/" + page,
-		beforeSend: function ( xhr ) {
-		xhr.overrideMimeType("text/plain; charset=x-user-defined");
-	}
-	}).done(function ( data ) {
-		if( 1==2 && console && console.log ) {
-			console.log("Sample of data:", data);
-		}
+	$.post('/api/book/bookmark', { bookcode: bookcode, page: page }, function(data) {
+		console.log(data);
 	});
 
 	// update last rendered page
@@ -648,17 +641,17 @@ function staggerImages(page) {
 		// current page
 		{
 			igal: '[data-page-index=' + i + ']',
-			url: "/cbz/" + book.bookcode + "/" + page
+			url: "/api/book/page/" + book.bookcode + "/" + page
 		},
 		// next page
 		{
 			igal: '[data-page-index=' + (i+1) + ']',
-			url: "/cbz/" + book.bookcode + "/" + (page + 1)
+			url: "/api/book/page/" + book.bookcode + "/" + (page + 1)
 		},
 		// prev page
 		{
 			igal: '[data-page-index=' + (i-1) + ']',
-			url: "/cbz/" + book.bookcode + "/" + (page - 1)
+			url: "/api/book/page/" + book.bookcode + "/" + (page - 1)
 		},
 	];
 
@@ -1117,11 +1110,11 @@ function iScrollUpdateContent(el, data) {
 	<body onload="onload();">
 		<div class="hidden navbar navbar-fixed-top" id="menu">
 			<div class="btn-group" id="bcs" role="group">
-				<button class="btn btn-default" id="bc1" link="/lists"  data-localize="browse.All"></button>
-				<button class="btn btn-default" id="bc2" link="/nlists" data-localize="browse.New"></button>
-				<button class="btn btn-default" id="bc3" link="/rlists" data-localize="browse.Reading"></button>
-				<button class="btn btn-default" id="bc4" link="/flists" data-localize="browse.Finished"></button>
-				<button class="btn btn-default" id="bc5" link="/alists" data-localize="browse.Author"></button>
+				<button class="btn btn-default" id="bc1" link="/api/books/all"  data-localize="browse.All"></button>
+				<button class="btn btn-default" id="bc2" link="/api/books/new" data-localize="browse.New"></button>
+				<button class="btn btn-default" id="bc3" link="/api/books/reading" data-localize="browse.Reading"></button>
+				<button class="btn btn-default" id="bc4" link="/api/books/finished" data-localize="browse.Finished"></button>
+				<button class="btn btn-default" id="bc5" link="/api/books/author" data-localize="browse.Author"></button>
             </div>
 			<button class="btn" onclick="location.href = '/browse.html'">
 				<i class="glyphicon glyphicon-folder-open"></i>

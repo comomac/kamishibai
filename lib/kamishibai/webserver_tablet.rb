@@ -8,7 +8,7 @@ module Kamishibai
 		end
 
 		# show all unique titles
-		post '/lists' do
+		post '/api/books/all' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -37,7 +37,7 @@ module Kamishibai
 		end
 
 		# lists containing newly imported books
-		post '/nlists' do
+		post '/api/books/new' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -83,7 +83,7 @@ module Kamishibai
 
 
 		# lists books that are unfinish reading
-		post '/rlists' do
+		post '/api/books/reading' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -128,7 +128,7 @@ module Kamishibai
 		end
 
 		# lists books that are finish reading
-		post '/flists' do
+		post '/api/books/finished' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -172,8 +172,8 @@ module Kamishibai
 			json jTitles
 		end
 
-		# show all unique titles
-		post '/alists' do
+		# show books grouped by author
+		post '/api/books/author' do
 			authors = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -201,8 +201,8 @@ module Kamishibai
 			json jAuthors
 		end
 
-		# list books ver2
-		get '/listbooks' do
+		# list books with meta-data
+		get '/api/books/info' do
 			content_type :json
 
 			bookcodes = request['bookcodes'] ? request['bookcodes'].split(',') : []

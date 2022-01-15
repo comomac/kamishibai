@@ -58,8 +58,8 @@ function reload_sources() {
 	var ul = $('#ul-sources');
 	ul.empty();
 
-	$.getScript('/list_sources', function() {
-		for (i in sources) {
+	$.get('/api/sources', function(sources) {
+		for (var i in sources) {
 			ul.append('<li><a tabindex="-1" href="#dir=' + sources[i] + '" rel="' + sources[i] + '">' + i + '&nbsp;<i class="icon-bookmark"></i>&nbsp;' + sources[i] + '</a></li>');
 		}
 	});
@@ -90,7 +90,7 @@ function reload_dir_lists(dir_path, keyword) {
 	var el = $('#dir_lists');
 	el.empty();
 
-	$.post('/lists_dir', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
+	$.post('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
 		el.append(data);
 
 		// make li evenly horizontally filled
@@ -146,7 +146,7 @@ function reload_dir_lists(dir_path, keyword) {
 
 function delete_book(bookcode) {
 	// send delete bookcode command to server
-	$.post('/delete_book', { bookcode: bookcode });
+	$.post('/api/book/delete', { bookcode: bookcode });
 }
 
 function toggleDelete( el ) {	
