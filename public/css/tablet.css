@@ -70,10 +70,12 @@
 	padding-left: 5px;
 	padding-right: 5px;
 }
-/*#searchbox {
-	position: absolute;
-	width: 80%;
-}*/
+#searchbox {
+	/* fix bug that safari cannot input text */
+	-webkit-user-select: all;
+	/* position: absolute; */
+	/* width: 80%; */
+}
 #leftbox {
 	/*float: left;*/
 	position: absolute;
