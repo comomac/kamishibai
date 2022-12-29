@@ -93,17 +93,17 @@ function uport() {
 /*
   full screen functions
 */
-function goFullScreen(i) {
+function goFullScreen(el) {
     var elem;
 
     // if out what i is
-    if (typeof i == 'object' || i instanceof Object) {
+    if (typeof el == 'object' || el instanceof Object) {
         // i is a DOM element
-        elem = i;
+        elem = el;
     }
-    else if (typeof i == 'string' || i instanceof String) {
+    else if (typeof el == 'string' || el instanceof String) {
         // i is an ID of DOM element
-        elem = document.getElementById(i);
+        elem = document.getElementById(el);
     }
     else {
         alert('goFullScreen(): unknown i');

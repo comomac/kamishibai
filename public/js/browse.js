@@ -105,7 +105,7 @@ function reload_dir_lists(dir_path, keyword) {
 
 		// replace all links to desktop reader
 		if (!hasTouch) {
-			for (i in el.find('LI A')) {
+			for (var i in el.find('LI A')) {
 				var el_a = el.find('LI A').eq(i);
 				if (el_a.parent().hasClass('file')) {
 					el_a.attr('href', el_a.attr('href').replace(/reader2/,'reader') );
