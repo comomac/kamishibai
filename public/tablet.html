@@ -145,7 +145,7 @@ function reload_books( bookcodes, options ) {
 			if (!!book.page) apage = book.page;
 			a.attr('href', '#book=' + bookcode + '&page=' + apage);
 			a.on('click', { bookcode: bookcode, bookpage: apage }, function(event) {
-				readBook(event.data.bookcode, apage);
+				readBook(event.data.bookcode, event.data.bookpage);
 			});
 
 			var img = $('<img>');
