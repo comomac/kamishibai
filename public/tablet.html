@@ -300,9 +300,11 @@ function readBook(bc, bp) {
 }
 
 function updateReaderFooter(page) {
-	if (typeof page === 'number') {
-		$('#pageCounter').html( gallery.pageIndex + '/' + book.pages );
+	if (typeof page !== 'number') {
+		page = -1;
 	}
+	$('#pageCounter').html( page + '/' + book.pages );
+
 	$('#clock').html( date.toTimeString().slice(0,5) );
 
 	getBatteryLevel().then(function(batteryPercentText) {
@@ -954,7 +956,7 @@ function onload() {
 
 	updateReaderFooter();
 	window.setInterval( function() {
-		updateReaderFooter();
+		updateReaderFooter(p);
 	}, 1000 * 60);
 
 	// show full screen button if device supports it
