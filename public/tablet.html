@@ -601,6 +601,8 @@ function closeReader() {
 
 	destroyGallery();
 
+	document.title = "Kamishibai";
+
 	reload_books( $('#bookinfo').attr('bookcodes') );
 }
 
