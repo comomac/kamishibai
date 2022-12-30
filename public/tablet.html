@@ -55,11 +55,16 @@ function reload_leftbox(url, keyword) {
 		var selectFirst = true;
 
 		// wait until myScroll is ready
-		var lastBookcodes = $.cookie(uport() + '.lastBookcodes');
+		var lastBookcodes = $.cookie(uport() + '.' + get_menu_selection() + '.lastBookcodes');
+
 		for (var obj of myScrollUL) {
 			if (obj.bookcodes.toString() === lastBookcodes) {
 				// show books
 				var lastSelectOptions = $.cookie(uport() + '.lastSelectOptions');
+
+				// highlight left menu
+				$('li.irow[bookcodes="' + lastBookcodes + '"]').addClass('left-picked');
+
 				reload_books(lastBookcodes, lastSelectOptions);
 
 				selectFirst = false;
@@ -92,8 +97,6 @@ function reload_leftbox(url, keyword) {
 
 // load books from the bookcodes
 function reload_books( bookcodes, options ) {
-	var menuNumber = get_menu_selection_number();
-
 	if (!!!bookcodes) {
 		$('#bookinfo').empty();
 		$('#books').empty();
@@ -106,6 +109,7 @@ function reload_books( bookcodes, options ) {
 		var el; // html element
 		var bookcode; // str
 		var book;
+		var menuSelect = get_menu_selection();
 
 		// show book title and author
 		el = $('#bookinfo');
@@ -123,7 +127,7 @@ function reload_books( bookcodes, options ) {
 			el.append(author);
 
 			// show book names if it is not auther listing
-			if (menuNumber !== 5) {
+			if (menuSelect !== 'author') {
 				var title = $('<div>');
 				title.html(book.title);
 				el.append(title);
@@ -156,7 +160,7 @@ function reload_books( bookcodes, options ) {
 			var span = $('<span>');
 
 			// show book names if author book listing
-			if (menuNumber === 5) {
+			if (menuSelect === 'author') {
 				span.html(book.title);
 			} else {
 				span.html(book.sname);
@@ -197,11 +201,10 @@ function prepare_lists(url) {
 
 	var sb  = $('#searchbox');
 	var bcs = $('#bcs');
-	var i   = get_menu_selection_number();
 
 	// remember keyword
 	var keyword;
-	if (i === 5) {
+	if (get_menu_selection() === 'author') {
 		keyword = sb.val();
 		bcs.attr('author', keyword);
 		$.cookie(uport() + '.author', keyword, { path: '/' });
@@ -216,7 +219,7 @@ function prepare_lists(url) {
 	reload_leftbox(url, keyword);
 }
 
-function get_menu_selection_number() {
+function get_menu_selection() {
 	var id = $('#bcs > button.active').attr('id');
 
 	var n;
@@ -224,13 +227,13 @@ function get_menu_selection_number() {
 		n = parseInt( id.replace('bc','') );
 	}
 
-	// 1 all
-	// 2 new
-	// 3 reading
-	// 4 finished
-	// 5 author
+	if (n === 1) return 'all';
+	if (n === 2) return 'new';
+	if (n === 3) return 'reading';
+	if (n === 4) return 'finished';
+	if (n === 5) return 'author';
 
-	return n || 1;
+	return 'all';
 }
 
 function get_menu_url() {
@@ -964,8 +967,6 @@ function onload() {
 
 		// is in reader mode
 		if (typeof getHashParams('book') !== 'undefined') {
-			console.log(12345)
-
 			var topage = getpage();
 
 			if (topage < 1) {
@@ -995,14 +996,29 @@ function iScrollLoad(maxLength) {
 	
 	$('.irow').text('').prop('onclick', null).off('click');
 	
+	// scroll to last Y position
+	var lastScrollY = parseInt($.cookie(uport() + '.' + get_menu_selection() + '.lastScrollY'));
+	if (isNaN(lastScrollY)) {
+		lastScrollY = 0;
+	}
+
 	myScroll = new IScroll('#iwrapper', {
 		mouseWheel: true,
 		infiniteElements: '#iscroller .irow',
 		infiniteLimit: maxLength,
 		dataset: iScrollRequestData,
 		dataFiller: iScrollUpdateContent,
-		cacheSize: 60
+		cacheSize: 60,
+		startY: lastScrollY,
+		scrollEnd: function(e, x) {
+			console.log(111, e, 222, x)
+		}
 	});
+
+	// make sure left are rendered with new y position
+	setTimeout(function() {
+		myScroll.refresh();
+	}, 500);
 }
 
 function iScrollRequestData(start, count) {
@@ -1026,15 +1042,14 @@ function iScrollUpdateContent(el, data) {
 
 	el.setAttribute("bookcodes", data.bookcodes);
 
-	switch (get_menu_selection_number()) {
-		case 1:
-		case 2:
-		case 3:
-		case 4:
+	switch (get_menu_selection()) {
+		case 'all':
+		case 'new':
+		case 'reading':
+		case 'finished':
 			el.innerText = data.title;
 			break;
-		case 5:
-			// author
+		case 'author':
 			el.innerText = data.author;
 			el.setAttribute("options", "sortbyauthor");
 			break;
@@ -1045,11 +1060,20 @@ function iScrollUpdateContent(el, data) {
 		var bookcodes = this.getAttribute("bookcodes");
 		var options = this.getAttribute("options");
 
-		// remember last selected book
-		$.cookie(uport() + '.lastBookcodes', bookcodes, { path: '/' });
-		
+		// remember last selected book, base on menu selected
+		$.cookie(uport() + '.' + get_menu_selection() + '.lastBookcodes', bookcodes, { path: '/' });
+
+		// remember last scroll position, base on menu selected
+		$.cookie(uport() + '.' + get_menu_selection() + '.lastScrollY', myScroll.y, { path: '/' });
+
 		// remember last select options
 		$.cookie(uport() + '.lastSelectOptions', options, { path: '/' });
+
+		// change colour to make it easier to see
+		$('.left-picked').removeClass('left-picked');
+		setTimeout(function() {
+			$(this.el).addClass('left-picked');
+		}.bind({el: this}), 100);
 
 		// load books and details
 		reload_books( bookcodes, options );
@@ -1108,7 +1132,7 @@ function iScrollUpdateContent(el, data) {
 	position: relative;
 }
 
-#iscroller li {
+#iscroller ul li {
 	position: absolute;
 	width: 100%;
 	top: 0;
@@ -1125,6 +1149,11 @@ function iScrollUpdateContent(el, data) {
 	border-top: 1px solid #fff;
 	background-color: #fafafa;
 	font-size: 16px;
+}
+
+#iscroller ul li.left-picked {
+	/* gold */
+	background-color: #ffd700;
 }
 </style>
 
