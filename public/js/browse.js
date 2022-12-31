@@ -100,9 +100,6 @@ function reload_dir_lists(dir_path, keyword) {
 		num = parseInt(window_width / num);
 		$('.directory, .file').css('width', num +'px');
 
-		// set container top height
-		container_height_refresh();
-
 		// replace all links to desktop reader
 		if (!hasTouch) {
 			for (var i in el.find('LI A')) {
@@ -249,16 +246,6 @@ function delete_disable() {
 
 }
 
-
-function container_height_refresh() {
-	// $('#container').css('top', $('#navtop').outerHeight() - $('#navcollapse').outerHeight() );
-}
-
-function reload_path_label(dir) {
-	// set container top height
-	container_height_refresh();
-}
-
 $(document).keydown(function(e) {
 	/* escape key */
 	if (e.keyCode == 27) {
@@ -365,12 +352,6 @@ $(function() {
 
 	// load dir and file list
 	setTimeout( function() {
-		setTimeout(function() {
-			// set container top height, make sure it runs after everything
-			// container_height_refresh();
-		}, 100);
-
-
 		// set hash to nothing first, then shortly after the correct hash path will be load, so the dir list will be run
 		window.location.hash = '';
 
