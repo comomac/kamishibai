@@ -23,7 +23,6 @@ Gem::Specification.new do |s|
   s.add_dependency 'json',      '>= 1.7.7'
   s.add_dependency 'rubyzip',   '>= 1.0.0'
   s.add_dependency 'sinatra',   '>= 1.4.4'
-  s.add_dependency 'sinatra-reloader', '>= 1.0'
   
   s.require_paths = ['lib']
   s.files = `git ls-files`.split($\)
