@@ -139,6 +139,7 @@ module Kamishibai
 			json jdat
 		end
 
+		# remember page read
 		post '/api/book/bookmark' do
 			bookcode = params[:bookcode].untaint
 			page     = params[:page].to_i

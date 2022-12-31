@@ -158,7 +158,7 @@ def open_cbz( zfile, page = 1, options = {} )
 	end
 
 	objs = []
-	#begin
+	begin
 		Zip::File.open( zfile ) { |x|
 			x.each { |zobj|
 				if zobj.ftype == :file and File.basename(zobj.name)[0] != '.' and File.basename( zobj.name ) =~ /\.(jpg|jpeg|png|gif)$/i
@@ -184,19 +184,17 @@ def open_cbz( zfile, page = 1, options = {} )
 					# load the image to check if the image is corrupted or not
 					GD2::Image.load( simg ) if defined?(GD2)
 				rescue => errmsg
-					puts "error: fail to load image #{page} : #{zfile}"
-					p errmsg
+					puts "error: fail to load image #{page} : #{zfile}\n#{errmsg}"
 					return nil
 				end
 
 				return simg
 			end
 		}
-	# rescue => e
-	# 	puts "Corrupted zip file."
-	# 	puts e.exception
-	# 	puts e.backtrace
-	# end
+	rescue => e
+		puts "Failed to open zip file.\n#{e.exception}\n#{e.backtrace}"
+		return nil
+	end
 end
 
 if defined?(ImageVoodoo)
