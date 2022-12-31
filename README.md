@@ -46,7 +46,7 @@ Mac OS X:
 3. sudo gem install kamishibai
   
 Linux (Ubuntu/Debian):  
-1. sudo apt-get install ruby ruby-dev  
+1. sudo apt-get install ruby ruby-dev libgd-dev
 2. sudo gem install kamishibai
 
 Windows:
