@@ -123,8 +123,20 @@ module Kamishibai
 			redirect '/browse.html'
 		end
 
-		get '/statistics' do
-			haml :statistics, :layout => false
+		get '/api/stats' do
+			jdat = {
+				totalBooks:      $db.books.length,
+				totalPages:      $db.books.collect { |bc, b| b.pages }.reduce( :+ ),
+				pagesRead:       $db.books.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ),
+				booksRead:       $db.books.collect { |bc, b| b.page if b.page }.compact.length,
+				booksUnfinished: $db.books.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
+				readingTime:     -1,
+				recentReadings:  [].join(", "),
+				favAuthors:      [].join(", "),
+				uptime:          -1,
+				totalUptime:     -1,
+			}
+			json jdat
 		end
 
 		post '/api/book/bookmark' do

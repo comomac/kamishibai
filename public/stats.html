@@ -1,0 +1,82 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Kamishibai</title>
+    <link href="/vendor/css/bootstrap.css" rel="stylesheet" type="text/css">
+    <script src="/vendor/js/jquery-1.12.4.min.js"></script>
+    <style type="text/css">
+        h4 {
+            display: inline;
+        }
+        p {
+            display: inline;
+            background-color: gold;
+            width: 150px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Statistics:</h1>
+    <div>
+        <h4>Total books</h4>
+        <p id="p-totalBooks">?</p>
+    </div>
+    <div>
+        <h4>Total pages</h4>
+        <p id="p-totalPages">?</p>
+    </div>
+    <div>
+        <h4>Pages read</h4>
+        <p id="p-pagesRead">?</p>
+    </div>
+    <div>
+        <h4>Books read</h4>
+        <p id="p-booksRead">?</p>
+    </div>
+    <div>
+        <h4>Unfinished books</h4>
+        <p id="p-booksUnfinished"></p>
+    </div>
+    <div>
+        <h4>Time spent reading</h4>
+        <p id="p-readingTime">? hours ? minutes</p>
+    </div>
+    <div>
+        <h4>Recent books read</h4>
+        <p id="p-recentReadings">titles...</p>
+    </div>
+    <div>
+        <h4>Favourite Authors</h4>
+        <p id="p-favAuthors">names...</p>
+    </div>
+    <div>
+        <h4>Uptime</h4>
+        <p id="p-uptime">? hours ? minutes</p>
+    </div>
+    <div>
+        <h4>Total uptime</h4>
+        <p id="p-totalUptime">? hours ? minutes</p>
+    </div>
+
+    <script language="javascript">
+    <!--
+        $(function() {
+            // get stats then replace in the matching p element using id as key
+            $.get('/api/stats').then(function(jdat, status, jqObj) {
+                var els = $('p[id^="p-"]');
+                for (var i=0; i<els.length; i++) {
+                    var el = els.eq(i);
+                    var id = el.attr('id');
+                    var k = id.replace('p-', '');
+
+                    el.text( jdat[k] );
+                }
+            });
+        });
+    //-->
+    </script>
+</body>
+
+</html>
