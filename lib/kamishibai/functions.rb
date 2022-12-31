@@ -152,8 +152,13 @@ end
 
 # cbz file accessor, give file name and page and you shall receive
 def open_cbz( zfile, page = 1, options = {} )
+	if !FileTest.exists?(zfile)
+		puts "error: zip file not found #{zfile}"
+		return nil
+	end
+
 	objs = []
-	# begin
+	#begin
 		Zip::File.open( zfile ) { |x|
 			x.each { |zobj|
 				if zobj.ftype == :file and File.basename(zobj.name)[0] != '.' and File.basename( zobj.name ) =~ /\.(jpg|jpeg|png|gif)$/i
