@@ -16,7 +16,6 @@ Gem::Specification.new do |s|
   s.rubyforge_project = 'kamishibai'
 
   s.add_dependency 'addressable', '>= 2.3.5'
-  s.add_dependency 'haml',      '>= 4.0.3'
   s.add_dependency 'thin',      '>= 1.6.0'
   s.add_dependency 'ffi',       '>= 1.9.0'
   s.add_dependency 'gd2-ffij',  '>= 0.1.1'
