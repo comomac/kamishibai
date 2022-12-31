@@ -409,6 +409,380 @@ module Kamishibai
 				image
 			end
 		end
+
+		########################################
+		#
+		# simple mode - books top menu section
+		#
+		########################################
+
+		# show all unique titles
+		post '/api/books/all' do
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.fullpath_valid
+				next unless book.title
+				next unless pregex.match( book.title )
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by title alphabetically
+			titles = titles.sort { |a, b| a[0] <=> b[0] }
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+		# lists containing newly imported books
+		post '/api/books/new' do
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.fullpath_valid
+				next unless book.itime
+				next unless Time.now.to_i - book.itime < 3600*24*$settings.new_book_days
+				next unless book.title
+				next unless pregex.match( book.title )
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by time last imported
+			titles = titles.sort { |a, b|
+				newest_a = 0
+				a[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).itime
+					newest_a = rtime if rtime and rtime > newest_a
+				}
+
+				newest_b = 0
+				b[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).itime
+					newest_b = rtime if rtime and rtime > newest_b
+				}
+
+				newest_b <=> newest_a
+			}
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+
+		# lists books that are unfinish reading
+		post '/api/books/reading' do
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.fullpath_valid
+				next unless book.page
+				next unless book.page < book.pages
+				next unless book.title
+				next unless pregex.match( book.title )
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by time last read
+			titles = titles.sort { |a, b|
+				newest_a = 0
+				a[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_a = rtime if rtime and rtime > newest_a
+				}
+
+				newest_b = 0
+				b[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_b = rtime if rtime and rtime > newest_b
+				}
+
+				newest_b <=> newest_a
+			}
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+		# lists books that are finish reading
+		post '/api/books/finished' do
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.fullpath_valid
+				next unless book.page
+				next unless book.page == book.pages
+				next unless book.title
+				next unless pregex.match( book.title )
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by time last read
+			titles = titles.sort { |a, b|
+				newest_a = 0
+				a[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_a = rtime if rtime and rtime > newest_a
+				}
+
+				newest_b = 0
+				b[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_b = rtime if rtime and rtime > newest_b
+				}
+
+				newest_b <=> newest_a
+			}
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+		# show books grouped by author
+		post '/api/books/author' do
+			authors = {}
+			$db.books.each { |bookcode, book|
+				next unless book.fullpath_valid
+				next unless book.author
+				next unless pregex.match( book.author )
+
+				if authors[ book.author ]
+					authors[ book.author ] << book.bookcode
+				else
+					authors[ book.author ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by author alphabetically
+			authors = authors.sort { |a, b| a[0] <=> b[0] }
+
+			jAuthors = []
+			authors.each { |author, bookcodes|
+				jAuthors << {
+					:author => author,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jAuthors
+		end
+
+		# list books with meta-data
+		get '/api/books/info' do
+			content_type :json
+
+			bookcodes = request['bookcodes'] ? request['bookcodes'].split(',') : []
+			options   = request['options']   ? request['options'].split(',') : []
+
+			books = {}
+
+			for bookcode in bookcodes
+				if $db.has_bookcode?( bookcode )
+					book = $db.get_book( bookcode )
+
+					# book volume/chapter/etc info
+					bn = File.basename( book.fullpath )
+					bn = bn.gsub( File.extname(bn), '' )
+					bn = bn.gsub( book.title, '' )
+					# bn = bn.gsub( bn.replace(/\'/,'&#39;'), '' )
+					bn = bn.gsub( /(\(.+?\))/, '' )
+					bn = bn.gsub( /(\[.+?\])/, '' )
+					bn = bn.gsub( /(\[\])/, '' )
+					bn = bn.gsub( / +/, ' ' )
+					bn.strip!
+
+					books[bookcode] = {
+						:title  => book.title,
+						:sname  => bn,
+						:author => book.author,
+						:size   => book.size,
+						:mtime  => book.mtime,
+						:itime  => book.itime,
+						:rtime  => book.rtime,
+						:page   => book.page,
+						:pages  => book.pages
+					}
+				end
+			end
+
+			JSON.pretty_generate( books )
+		end
+
+		########################################
+		#
+		# configuration page
+		#
+		########################################
+
+		# read config
+		get '/config' do
+			if request['get']
+				case request['get']
+					when 'srcs'
+						# get list of sources
+						content_type :javascript
+						$settings.srcs.to_s
+					when 'prefs'
+						content_type :javascript
+
+						"g_prefs['port'] = #{ $settings.port };\n" +
+						"g_prefs['new_book_days'] = #{ $settings.new_book_days };\n" +
+						"g_prefs['user'] = \"#{ $settings.username }\";\n" +
+						"g_prefs['pass'] = \"#{ $settings.password }\";\n" +
+						"g_prefs['resize'] = #{ $settings.image_resize };\n" +
+						"g_prefs['quality'] = #{ $settings.default_image_quality };\n"
+
+					when 'total_books'
+						# get number of books in db
+						content_type :javascript
+						$db.books.length.to_s
+				end
+			else
+				haml :config, :layout => false
+			end
+		end
+
+		# save config
+		post '/config' do
+			if request['set']
+				case request['set']
+					when 'srcs'
+						# save book sources
+						old_srcs = $settings.srcs.collect { |d|
+							if d[-1..-1] == '/'
+								d[0..-2]
+							else
+								d[0..-1]
+							end
+						}.sort
+
+						srcs = request['srcs'].split('||||').compact
+						srcs = srcs.collect { |d|
+							if d[-1..-1] == '/'
+								d[0..-2]
+							else
+								d[0..-1]
+							end
+						}.sort
+						$settings.srcs = srcs
+
+						$settings.save
+
+						# srcs has changed, reload the whole kamishibai, to reload the db
+						if old_srcs != srcs
+							init_database
+						end
+					when 'prefs'
+						# save settings
+						r = request
+
+						old_port = $settings.port
+						$settings.port = r['port'].to_i
+						$settings.image_resize = r['resize'] == 'on' ? true : false
+						$settings.username = r['user']
+						$settings.password = r['pass']
+						$settings.new_book_days = r['new_book_days'].to_i
+						$settings.default_image_quality = r['quality'].to_i
+
+						$settings.save
+
+						if $settings.port != old_port
+							# restart webserver if port is different from old port
+							$RERUN = true
+							Process.kill("TERM", Process.pid)
+						end
+				end
+			end
+		end
+
+		########################################
+		#
+		# remote commands
+		#
+		########################################
+
+		# flush bookmarks from memory to hdd
+		get '/save_bookmarks' do
+			$db.save_bookmarks
+		end
+		
+		# restart webserver
+		get '/restart' do
+			$RERUN = true
+			Process.kill("TERM", Process.pid)
+			'<html><head><meta http-equiv="refresh" content="5; url=/"></head><body>restarting...</body></html>'
+		end
+
+		# shutdown kamishibai
+		get '/shutdown' do
+			$RERUN = false
+			Process.kill("TERM", Process.pid)
+		end
+
+		# delete file (put into Trash folder)
+		post '/api/book/delete' do
+			bookcode = request['bookcode'].untaint
+
+			fp = $db.get_book(bookcode).fullpath
+
+			trash_dir = File.dirname( fp ) + '/Trash'
+
+			unless FileTest.directory?( trash_dir )
+				unless File.stat( File.dirname(fp) ).writable?
+					halt "Error. Directory is read only! #{ File.dirname(fp) }"
+				end
+
+				Dir.mkdir( trash_dir )
+			end
+
+			File.rename( fp, trash_dir + '/' + File.basename(fp) )
+
+			"deleted #{File.basename(fp)}"
+		end
+
 	end
 end
 
