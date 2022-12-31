@@ -6,7 +6,7 @@ License: refer to LICENSE file
 // global variables
 var hasTouch = 'ontouchstart' in window; //find out if device is touch device or not
 var items_in_row = 0; // number of items in a row (inside #container)
-var lastbook = getHashParams()['lastbook'];
+var lastbook = getHashParams("lastbook");
 if (!lastbook) lastbook = '';
 var isBookSelectMode = false;
 var isMobile = navigator.userAgent.match(/(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i)
@@ -15,7 +15,7 @@ var last_window_width = window.innerWidth;
 var isDeleteMode = false;
 
 // set the last browse selected on cookie
-$.cookie(uport() + '.lastbrowse', '/browse/', { path: '/' });
+$.cookie(uport() + '.lastbrowse', '/browse.html', { path: '/' });
 
 // detect os
 var OSName="Unknown OS";
@@ -35,14 +35,13 @@ if (!console.log) {
 	}
 }
 
-function homepage() {
+function updir() {
 	// get dir from hash
-	var hashes = getHashParams();
-	var dir = hashes['dir'].split('/');
+	var dir = getHashParams("dir").split('/');
 
 	dir.pop();
 
-	window.location.hash = 'dir=' + dir.join('/')
+	window.location.hash = 'dir=' + dir.join('/');
 	return false;
 }
 
@@ -52,15 +51,15 @@ function exe_order_by(str) {
 	
 	$.cookie(uport() + '.order_by', str, { path: '/' });
 
-	reload_dir_lists( getHashParams()['dir'], $('#searchbox').val() );
+	reload_dir_lists( getHashParams("dir"), $('#searchbox').val() );
 }
 
 function reload_sources() {
 	var ul = $('#ul-sources');
 	ul.empty();
 
-	$.getScript('/list_sources', function() {
-		for (i in sources) {
+	$.get('/api/sources', function(sources) {
+		for (var i in sources) {
 			ul.append('<li><a tabindex="-1" href="#dir=' + sources[i] + '" rel="' + sources[i] + '">' + i + '&nbsp;<i class="icon-bookmark"></i>&nbsp;' + sources[i] + '</a></li>');
 		}
 	});
@@ -91,7 +90,7 @@ function reload_dir_lists(dir_path, keyword) {
 	var el = $('#dir_lists');
 	el.empty();
 
-	$.post('/lists_dir', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
+	$.post('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
 		el.append(data);
 
 		// make li evenly horizontally filled
@@ -101,12 +100,9 @@ function reload_dir_lists(dir_path, keyword) {
 		num = parseInt(window_width / num);
 		$('.directory, .file').css('width', num +'px');
 
-		// set container top height
-		container_height_refresh();
-
 		// replace all links to desktop reader
 		if (!hasTouch) {
-			for (i in el.find('LI A')) {
+			for (var i in el.find('LI A')) {
 				var el_a = el.find('LI A').eq(i);
 				if (el_a.parent().hasClass('file')) {
 					el_a.attr('href', el_a.attr('href').replace(/reader2/,'reader') );
@@ -147,7 +143,7 @@ function reload_dir_lists(dir_path, keyword) {
 
 function delete_book(bookcode) {
 	// send delete bookcode command to server
-	$.post('/delete_book', { bookcode: bookcode });
+	$.post('/api/book/delete', { bookcode: bookcode });
 }
 
 function toggleDelete( el ) {	
@@ -193,7 +189,7 @@ function countdownDelete(el, time) {
 			var t = $('#trash');
 
 			if (t.length <= 0) {
-				var li_link = getHashParams()['dir'] + '/Trash/';
+				var li_link = getHashParams("dir") + '/Trash/';
 				var li_trash = '<li class="directory collapsed trash" id="trash"><a href="#dir=' + li_link + '"><img src="/images/trash-full-mini.png" /><span>Trash</span></a></li>'
 				$('#ul-lists').append(li_trash);
 			}
@@ -250,24 +246,6 @@ function delete_disable() {
 
 }
 
-
-function container_height_refresh() {
-	// $('#container').css('top', $('#navtop').outerHeight() - $('#navcollapse').outerHeight() );
-}
-
-function reload_path_label(dir) {
-	// set container top height
-	container_height_refresh();
-}
-
-$(document).keydown(function(e) {
-	/* escape key */
-	if (e.keyCode == 27) {
-		homepage();
-		return false;
-	}
-});
-
 // change dir on hashchange
 window.addEventListener("hashchange", function() {
 	// get dir from hash
@@ -310,6 +288,14 @@ window.addEventListener("hashchange", function() {
 	reload_dir_lists(dir, keyword);
 });
 
+// escape key go up the directory
+document.onkeydown = function(e) {
+	if (e.keyCode == 27) {
+		updir();
+		return false;
+	}
+};
+
 // page init
 $(function() {
 	// load the text localization
@@ -322,29 +308,15 @@ $(function() {
 		$('#searchbox').val( $.cookie(uport() + '.lastsearch') );
 	}
 
-	$('#searchbox').bind('change', function(e) {
-		// get dir from hash
-		var hashes = getHashParams();
-		var dir = hashes['dir'];
-
-		// get keyword from searchbox
-		var keyword = $('#searchbox').val();
-
-		// stop if it the search is same as last search
-		if (keyword == $.cookie(uport() + '.lastsearch')) return false;
-
-		// save keyword used for search
-		$.cookie(uport() + '.lastsearch', keyword, { path: '/' });
-
-		// reload the dir list
-		reload_dir_lists(dir, keyword);
-	});
-	$('#searchbox').bind('keyup', function(e) {
+	// add event for searchbox
+	$('#searchbox').bind('change keyup', function(e) {
 		e = e || window.event;
 
 		if (e.keyCode == 13 || e.keyCode == 27) {
 			// enter key || escape key, unfocus the searchbox
 			$('#searchbox').blur();
+			// close top menu
+			$('#navcollapse').removeClass('in');
 		}
 
 		// get dir from hash
@@ -363,15 +335,9 @@ $(function() {
 		// reload the dir list
 		reload_dir_lists(dir, keyword);
 	});
-
+	
 	// load dir and file list
 	setTimeout( function() {
-		setTimeout(function() {
-			// set container top height, make sure it runs after everything
-			container_height_refresh();
-		}, 100);
-
-
 		// set hash to nothing first, then shortly after the correct hash path will be load, so the dir list will be run
 		window.location.hash = '';
 

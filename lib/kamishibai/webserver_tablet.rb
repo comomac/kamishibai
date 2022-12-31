@@ -8,9 +8,7 @@ module Kamishibai
 		end
 
 		# show all unique titles
-		post '/lists' do
-			content_type :text
-
+		post '/api/books/all' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -27,25 +25,19 @@ module Kamishibai
 			# sort by title alphabetically
 			titles = titles.sort { |a, b| a[0] <=> b[0] }
 
-			c = '  ' # double space instead of 0 byte, so book without title or obscure filename can be group and have divider
-			html = ''
+			jTitles = []
 			titles.each { |title, bookcodes|
-				if c != title[0..0]
-					# add divider
-					c = title[0..0] == '' ? '-' : title[0..0]
-					html << "<li class=\"ui-li-divider\">#{c}</li>\n"
-				end
-
-				# html << "<li class=\"li-title\" bookcodes=\"#{bookcodes.join(',')}\">#{title.escape_html}</li>\n"
-				html << "<li class=\"li-title\" bookcodes=\"#{bookcodes.join(',')}\">#{title.escape_html}</li>\n"
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
 			}
-			html
+
+			json jTitles
 		end
 
 		# lists containing newly imported books
-		post '/nlists' do
-			content_type :text
-
+		post '/api/books/new' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -78,18 +70,20 @@ module Kamishibai
 				newest_b <=> newest_a
 			}
 
-			html = ''
+			jTitles = []
 			titles.each { |title, bookcodes|
-				html << "<li class=\"li-title\" bookcodes=\"#{bookcodes.join(',')}\">#{title.escape_html}</li>\n"
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
 			}
-			html
+
+			json jTitles
 		end
 
 
 		# lists books that are unfinish reading
-		post '/rlists' do
-			content_type :text
-
+		post '/api/books/reading' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -122,17 +116,19 @@ module Kamishibai
 				newest_b <=> newest_a
 			}
 
-			html = ''
+			jTitles = []
 			titles.each { |title, bookcodes|
-				html << "<li class=\"li-title\" bookcodes=\"#{bookcodes.join(',')}\">#{title.escape_html}</li>\n"
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
 			}
-			html
+
+			json jTitles
 		end
 
 		# lists books that are finish reading
-		post '/flists' do
-			content_type :text
-
+		post '/api/books/finished' do
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -165,17 +161,19 @@ module Kamishibai
 				newest_b <=> newest_a
 			}
 
-			html = ''
+			jTitles = []
 			titles.each { |title, bookcodes|
-				html << "<li class=\"li-title\" bookcodes=\"#{bookcodes.join(',')}\">#{title.escape_html}</li>\n"
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
 			}
-			html
+
+			json jTitles
 		end
 
-		# show all unique titles
-		post '/alists' do
-			content_type :text
-
+		# show books grouped by author
+		post '/api/books/author' do
 			authors = {}
 			$db.books.each { |bookcode, book|
 				next unless book.fullpath_valid
@@ -192,30 +190,19 @@ module Kamishibai
 			# sort by author alphabetically
 			authors = authors.sort { |a, b| a[0] <=> b[0] }
 
-			c = '  ' # double space instead of 0 byte, so book without title or obscure filename can be group and have divider
-			html = ''
+			jAuthors = []
 			authors.each { |author, bookcodes|
-				if c != author[0..0]
-					# add divider
-					c = author[0..0] == '' ? '-' : author[0..0]
-
-					html << "<li class=\"ui-li-divider\">#{c}</li>"
-				end
-
-				html << "<li class=\"li-title\" bookcodes=\"#{bookcodes.join(',')}\" options=\"sortbyauthor\">#{author.escape_html}</li>\n"
+				jAuthors << {
+					:author => author,
+					:bookcodes => bookcodes
+				}
 			}
-			html
+
+			json jAuthors
 		end
 
-		# new, combined browse and reader
-		get '/tablet' do
-			cache_control :public, :must_revalidate, :max_age => 1
-
-			haml :tablet3, :layout => false
-		end
-
-		# list books ver2
-		get '/listbooks' do
+		# list books with meta-data
+		get '/api/books/info' do
 			content_type :json
 
 			bookcodes = request['bookcodes'] ? request['bookcodes'].split(',') : []

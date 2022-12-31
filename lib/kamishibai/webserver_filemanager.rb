@@ -5,7 +5,7 @@
 module Kamishibai
 	class Webserver
 
-		post '/delete_book' do
+		post '/api/book/delete' do
 			bookcode = request['bookcode'].untaint
 
 			fp = $db.get_book(bookcode).fullpath

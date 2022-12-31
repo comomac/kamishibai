@@ -6,7 +6,7 @@ require 'haml'
 require 'pp' if $debug
 require 'sinatra'
 require 'sinatra/base'
-require 'sinatra/reloader' if development? and Gem::Specification::find_all_by_name('sinatra-reloader').any?
+require 'sinatra/json'
 #require 'rack/contrib/try_static'
 require 'rbconfig'
 
@@ -25,40 +25,6 @@ module Kamishibai
 
 		# smaller, quicker web server
 		set :server, 'thin' unless RUBY_PLATFORM == 'java'
-
-		if $debug
-			set :environment, :development
-		else
-			set :environment, :production
-		end
-
-		configure :development do
-			enable :logging
-			if Gem::Specification::find_all_by_name('sinatra-reloader').any?
-				register Sinatra::Reloader
-
-				also_reload 'kamishibai/functions'
-				also_reload 'kamishibai/patches'
-				also_reload 'kamishibai/book'
-				also_reload 'kamishibai/database'
-
-				# reload webserver plug-ins
-				Dir.glob( settings.root + '/../**/webserver_*.rb' ) { |f|
-					also_reload f.gsub('.rb','')
-				}
-			end
-
-			# enable caching for public directory
-			set :static_cache_control, [:public, :max_age => 1]
-		end
-
-		configure :production do
-			disable :logging
-			disable :raise_errors
-
-			# enable caching for public directory
-			set :static_cache_control, [:public, :max_age => 1] # 300
-		end
 
 		configure do
 			# listen to all interface
@@ -97,6 +63,7 @@ module Kamishibai
 			mime_type :png, 'image/png'
 			mime_type :gif, 'image/gif'
 			mime_type :css, 'text/css'
+			mime_type :html, 'text/html'
 			mime_type :javascript, 'application/javascript'
 		end
 
@@ -153,43 +120,17 @@ module Kamishibai
 
 		# redirect index page
 		get '/' do
-			redirect '/browse/'
-			# if request.user_agent =~ /(android|tablet|iphone|ipad)/i
-			# 	redirect '/browse_tablet/'
-			# else
-			# 	redirect '/browse/'
-			# end
+			redirect '/browse.html'
 		end
 
 		get '/statistics' do
 			haml :statistics, :layout => false
 		end
 
-		# browse page with folder/file navigation
-		get '/browse/' do
-			haml :browse, :layout => false
-		end
+		post '/api/book/bookmark' do
+			bookcode = params[:bookcode].untaint
+			page     = params[:page].to_i
 
-		get '/bookinfo/*' do |bookcode|
-			input_check( bookcode, 1)
-
-			content_type :javascript
-
-			page = @book.page ? @book.page : 'null'
-
-"var book = {
-	bookcode: '#{@book.bookcode}',
-	basename: '#{File.basename( @book.fullpath ).gsub(/\.cbz$/i,'').escape_html}',
-	title:    '#{@book.title.to_s.escape_html}',
-	author:   '#{@book.author.to_s.escape_html}',
-	page:     #{page},
-	pages:    #{@book.pages}
-};
-"
-		end
-
-		get '/setbookmark/*/*' do |bookcode, page|
-			page = page.to_i
 			input_check( bookcode, page )
 
 			$db.set_bookmark(bookcode, page)
@@ -197,31 +138,13 @@ module Kamishibai
 			"bookmarked"
 		end
 
-		def self.get_or_post(path, opts={}, &block)
-			get(path, opts, &block)
-			post(path, opts, &block)
-		end
-
-		# reader page
-		get '/reader/' do
-			cache_control :public, :must_revalidate, :max_age => 1
-
-			haml :reader, :layout => false
-		end
-
 		# list sources
-		get '/list_sources' do
-			content_type :javascript
-
-			%Q{
-sources = [
-#{$settings.srcs.collect{ |x| "  \"#{x}\"" }.join(",\n")}
-]
-}
+		get '/api/sources' do
+			json $settings.srcs
 		end
 
 		# directory browse page
-		get_or_post '/lists_dir' do
+		post '/api/dir_list' do
 			content_type :text
 			path = File.expand_path( request['dir'].untaint )
 			order_by = request['order_by'].untaint
@@ -355,7 +278,7 @@ sources = [
 					f = File.basename(fp)
 					ext = File.extname(fp)[1..-1]
 
-					img = "<img class='lazy fadeIn fadeIn-1s fadeIn-Delay-Xs' data-original='/thumbnail/#{bookcode}' alt='Loading...' />"
+					img = "<img class='lazy fadeIn fadeIn-1s fadeIn-Delay-Xs' data-original='/api/book/thumb/#{bookcode}' alt='Loading...' />"
 
 					if book.page
 						# prepare the value for the visual read progress
@@ -372,10 +295,10 @@ sources = [
 							readstate = 'read5'
 						end
 
-						href = '/tablet#book=' + bookcode + '&page=' + page.to_s
+						href = '/tablet.html#book=' + bookcode + '&page=' + page.to_s
 					else
 						readstate = 'read0'
-						href = '/tablet#book=' + bookcode
+						href = '/tablet.html#book=' + bookcode
 					end
 
 					html << "\t<li class=\"file ext_#{ext}\"><a href=\"#{href}\" bookcode=\"#{bookcode}\" rel=\"#{fp}\">#{img}<span class=\"#{readstate}\">#{f.escape_html}</span><span class=\"badge badge-info bookpages\">#{book.pages}</span></a></li>\n"
@@ -414,7 +337,7 @@ sources = [
 		end
 
 		# cbz thumbnail
-		get '/thumbnail/*' do |bookcode|
+		get '/api/book/thumb/*' do |bookcode|
 			cache_control :public, :must_revalidate, :max_age => 3600
 
 			# check and setup the variable
@@ -429,15 +352,7 @@ sources = [
 		end
 
 		# cbz file loader
-		get '/cbz/*/*' do |bookcode, page|
-			# # fake delay
-			# if $imgNum
-			# 	$imgNum += 1
-			# else
-			# 	$imgNum = 1
-			# end
-			# pp $imgNum
-
+		get '/api/book/page/*/*' do |bookcode, page|
 			page = page.to_i
 			cache_control :public, :must_revalidate, :max_age => 3600
 
@@ -481,16 +396,6 @@ sources = [
 				# give raw
 				image
 			end
-		end
-
-		get '/list_db' do
-			html = "<html><body>\n"
-			p $db.books.length
-			$db.books.each { |bookcode, book|
-				html << "<pre>#{bookcode}  #{book.page.to_s.rjust(3)}/#{book.pages}  #{book.fullpath}</pre>\n"
-			}
-			html << "</body></html>"
-			html
 		end
 	end
 end
