@@ -90,70 +90,23 @@ function uport() {
 }
 
 
-/*
-  full screen functions
-*/
-function goFullScreen(el) {
-    var elem;
-
-    // if out what i is
-    if (typeof el == 'object' || el instanceof Object) {
-        // i is a DOM element
-        elem = el;
-    }
-    else if (typeof el == 'string' || el instanceof String) {
-        // i is an ID of DOM element
-        elem = document.getElementById(el);
-    }
-    else {
-        alert('goFullScreen(): unknown i');
-    }
-
-    // go full screen
-    if (elem.mozRequestFullScreen) {
-        elem.mozRequestFullScreen();
-    }
-    else if (elem.webkitRequestFullScreen) {
-        elem.webkitRequestFullScreen();
-    }
-    else {
-        alert('cannot go full screen');
-    }
-}
-
-function exitFullScreen() {
-    if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-    }
-    else if (document.webkitCancelFullScreen) {
-        document.webkitCancelFullScreen();
-    }
-    else {
-        alert('cannot exit full screen');
-    }
-}
-
 function toggleFullScreen(id) {
-    if (isFullScreen()) {
-        exitFullScreen();
+    var doc = window.document;
+    var docEl = doc.getElementById(id);
+   
+    var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen || undefined;
+    var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen || undefined;
+   
+    if (!!!requestFullScreen || !!!cancelFullScreen) {
+        alert('fullscreen api not supported');
+        return;
     }
-    else {
-        goFullScreen(id);
-    }
-}
 
-function isFullScreen() {
-    if (typeof document.mozFullScreen != 'undefined') {
-        return document.mozFullScreen;
-    }
-    else if (typeof document.webkitIsFullScreen != 'undefined') {
-        return document.webkitIsFullScreen;
-    }
-    else if (screen.width == window.innerWidth && screen.height == window.innerHeight) {
-        return true;
+    if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+        requestFullScreen.call(docEl);
     }
     else {
-        return false;
+        cancelFullScreen.call(doc);
     }
 }
 

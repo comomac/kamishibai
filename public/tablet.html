@@ -745,25 +745,6 @@ function hasMoved(b,e) {
 	}
 }
 
-function toggleFullScreen(id) {
-	var elem = document.getElementById(id);
-	var btn = $('#gofullscreen'); // button for toggle full screen
-
-	if (isFullScreen()) {
-		btn.html('<div>full screen</div>');
-
-		exitFullScreen();
-	}
-	else {
-		btn.html('<div>exit full screen</div>');
-
-		goFullScreen(id);
-	}
-
-	// refresh button text
-	btn.button('refresh');
-}
-
 // ########################################################################################
 // #
 // #      main
@@ -772,6 +753,11 @@ function toggleFullScreen(id) {
 
 // global variables
 var hasTouch = 'ontouchstart' in window; //find out if device is touch device or not
+
+var fullScreenAvailable = document.fullscreenEnabled || 
+                            document.mozFullscreenEnabled ||
+                            document.webkitFullscreenEnabled ||
+                            document.msFullscreenEnabled;
 
 // for iscroller
 document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
@@ -946,10 +932,7 @@ function onload() {
 	}, 1000 * 60);
 
 	// show full screen button if device supports it
-	if (document.mozCancelFullScreen) {
-		$('#full-screen-btn').removeClass('hidden');
-	}
-	if (document.webkitCancelFullScreen) {
+	if (fullScreenAvailable) {
 		$('#full-screen-btn').removeClass('hidden');
 	}
 
@@ -1161,8 +1144,8 @@ function iScrollUpdateContent(el, data) {
 			<div class="ui-bar-a" id="booktitle"></div>
 			<div class="ui-bar-a" id="readermenu">
 				<div>
-					<div class="gap" id="full-screen-btn">
-						<div class="hidden ui-btn ui-btn-up-a ui-shadow ui-btn-corner-all" id="gofullscreen" onclick="toggleFullScreen('container'); hidemenu();">
+					<div class="gap">
+						<div id="full-screen-btn" class="hidden ui-btn ui-btn-up-a ui-shadow ui-btn-corner-all" id="gofullscreen" onclick="toggleFullScreen('container'); hidemenu();">
 							<div>
 								full screen
                             </div>
@@ -1183,7 +1166,7 @@ function iScrollUpdateContent(el, data) {
 					<div class="gap">
 						<div class="ui-btn ui-btn-up-a ui-shadow ui-btn-corner-all" id="closeReader" onclick="closeReader();">
 							<div>
-								close reader
+								close reader 00002
                             </div>
                         </div>
                     </div>
