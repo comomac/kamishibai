@@ -289,12 +289,12 @@ window.addEventListener("hashchange", function() {
 });
 
 // escape key go up the directory
-$(document).keydown(function(e) {
+document.onkeydown = function(e) {
 	if (e.keyCode == 27) {
 		updir();
 		return false;
 	}
-});
+};
 
 // page init
 $(function() {
@@ -315,6 +315,8 @@ $(function() {
 		if (e.keyCode == 13 || e.keyCode == 27) {
 			// enter key || escape key, unfocus the searchbox
 			$('#searchbox').blur();
+			// close top menu
+			$('#navcollapse').removeClass('in');
 		}
 
 		// get dir from hash
