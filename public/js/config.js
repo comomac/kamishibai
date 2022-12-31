@@ -17,7 +17,7 @@ $(function(e) {
 	reload_locale();
 	
 	// load drives
-	for (i in drives) {
+	for (var i in drives) {
 		var c = "load_dir('" + drives[i] + "/')";
 		$('#drives').append("<button class='btn' onclick=\"" + c + ";\">" + drives[i] + "</span>");
 	}
@@ -40,7 +40,7 @@ function load_dirs() {
 	$.getScript("/config?get=srcs", function(data) {
 		var dirs = eval(data);
 
-		for (i in dirs) {
+		for (var i in dirs) {
 			af_add_dir( dirs[i] );
 		}
 	});

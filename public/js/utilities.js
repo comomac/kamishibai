@@ -4,7 +4,7 @@ License: refer to LICENSE file
 
 // function to format the hash to object
 // example: #book=abc.zip&page=7 -> $['book']='abc.zip', $['page']=7
-function getHashParams() {
+function getHashParams(singleParam) {
     var hashParams = {};
     var e,
         a = /\+/g,  // Regex for replacing addition symbol with a space
@@ -16,12 +16,18 @@ function getHashParams() {
     while (e = r.exec(q))
        hashParams[d(e[1])] = d(e[2]);
 
+    if (!!singleParam) {
+        // return text
+        return hashParams[singleParam];
+    }
+
+    // return object
     return hashParams;
 }
 
 // return fully formatted hash
 function fullhash(page) {
-	return 'book=' + getHashParams()['book'] + '&page=' + page;
+	return "book=" + getHashParams("book") + "&page=" + page;
 }
 
 // a queue that will make the browser run more responsively
@@ -37,7 +43,7 @@ $.jobqueue = {
                     setTimer(time);
                 }
             }, time || 2);
-        }
+        };
 
         if (fn) {
             $.jobqueue._queue.push([fn, context, time]);
@@ -84,70 +90,23 @@ function uport() {
 }
 
 
-/*
-  full screen functions
-*/
-function goFullScreen(i) {
-    var elem;
-
-    // if out what i is
-    if (typeof i == 'object' || i instanceof Object) {
-        // i is a DOM element
-        elem = i;
-    }
-    else if (typeof i == 'string' || i instanceof String) {
-        // i is an ID of DOM element
-        elem = document.getElementById(i);
-    }
-    else {
-        alert('goFullScreen(): unknown i');
-    }
-
-    // go full screen
-    if (elem.mozRequestFullScreen) {
-        elem.mozRequestFullScreen();
-    }
-    else if (elem.webkitRequestFullScreen) {
-        elem.webkitRequestFullScreen();
-    }
-    else {
-        alert('cannot go full screen');
-    }
-}
-
-function exitFullScreen() {
-    if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-    }
-    else if (document.webkitCancelFullScreen) {
-        document.webkitCancelFullScreen();
-    }
-    else {
-        alert('cannot exit full screen');
-    }
-}
-
 function toggleFullScreen(id) {
-    if (isFullScreen()) {
-        exitFullScreen();
+    var doc = window.document;
+    var docEl = doc.getElementById(id);
+   
+    var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen || undefined;
+    var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen || undefined;
+   
+    if (!!!requestFullScreen || !!!cancelFullScreen) {
+        alert('fullscreen api not supported');
+        return;
     }
-    else {
-        goFullScreen(id);
-    }
-}
 
-function isFullScreen() {
-    if (typeof document.mozFullScreen != 'undefined') {
-        return document.mozFullScreen;
-    }
-    else if (typeof document.webkitIsFullScreen != 'undefined') {
-        return document.webkitIsFullScreen;
-    }
-    else if (screen.width == window.innerWidth && screen.height == window.innerHeight) {
-        return true;
+    if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+        requestFullScreen.call(docEl);
     }
     else {
-        return false;
+        cancelFullScreen.call(doc);
     }
 }
 
@@ -158,13 +117,18 @@ function isImageCached(src) {
     return image.complete;
 }
 
-function updateBatteryLevel() {
+function getBatteryLevel() {
+    // return -1 or 0-100%
+
     if (navigator.battery) {
         // firefox support
-        battery_level = Math.floor(navigator.battery.level * 100) + '%';
+        return Promise.resolve(Math.floor(navigator.battery.level * 100) + "%");
     }
-    else if (navigator.getBattery()) {
+    if (navigator.getBattery) {
         // chrome support
-        navigator.getBattery().then(function(battery) { battery_level =  Math.floor(battery.level * 100) + '%' });
+        return navigator.getBattery().then(function(battery) {
+            return Math.floor(battery.level * 100) + "%";
+        });
     }
+    return Promise.resolve("-1");
 }

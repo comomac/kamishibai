@@ -25,7 +25,15 @@ body {
 	padding: 0px;
 	margin: 0px;
 }
+
+#dir_lists {
+	/* hack to make browse.html top menu always shown collasped */
+	min-height: 1024px;
+}
+
 #ul-lists {
+	/* align with top menu */
+	top: 57px;
 	left: 0px;
 	position: absolute;
 	width: 100%;
