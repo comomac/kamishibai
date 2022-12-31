@@ -35,7 +35,7 @@ if (!console.log) {
 	}
 }
 
-function homepage() {
+function updir() {
 	// get dir from hash
 	var dir = getHashParams("dir").split('/');
 
@@ -246,14 +246,6 @@ function delete_disable() {
 
 }
 
-$(document).keydown(function(e) {
-	/* escape key */
-	if (e.keyCode == 27) {
-		homepage();
-		return false;
-	}
-});
-
 // change dir on hashchange
 window.addEventListener("hashchange", function() {
 	// get dir from hash
@@ -296,6 +288,14 @@ window.addEventListener("hashchange", function() {
 	reload_dir_lists(dir, keyword);
 });
 
+// escape key go up the directory
+$(document).keydown(function(e) {
+	if (e.keyCode == 27) {
+		updir();
+		return false;
+	}
+});
+
 // page init
 $(function() {
 	// load the text localization
@@ -308,24 +308,8 @@ $(function() {
 		$('#searchbox').val( $.cookie(uport() + '.lastsearch') );
 	}
 
-	$('#searchbox').bind('change', function(e) {
-		// get dir from hash
-		var hashes = getHashParams();
-		var dir = hashes['dir'];
-
-		// get keyword from searchbox
-		var keyword = $('#searchbox').val();
-
-		// stop if it the search is same as last search
-		if (keyword == $.cookie(uport() + '.lastsearch')) return false;
-
-		// save keyword used for search
-		$.cookie(uport() + '.lastsearch', keyword, { path: '/' });
-
-		// reload the dir list
-		reload_dir_lists(dir, keyword);
-	});
-	$('#searchbox').bind('keyup', function(e) {
+	// add event for searchbox
+	$('#searchbox').bind('change keyup', function(e) {
 		e = e || window.event;
 
 		if (e.keyCode == 13 || e.keyCode == 27) {
@@ -349,7 +333,7 @@ $(function() {
 		// reload the dir list
 		reload_dir_lists(dir, keyword);
 	});
-
+	
 	// load dir and file list
 	setTimeout( function() {
 		// set hash to nothing first, then shortly after the correct hash path will be load, so the dir list will be run
