@@ -367,7 +367,7 @@ $(function() {
 	setTimeout( function() {
 		setTimeout(function() {
 			// set container top height, make sure it runs after everything
-			container_height_refresh();
+			// container_height_refresh();
 		}, 100);
 
 
