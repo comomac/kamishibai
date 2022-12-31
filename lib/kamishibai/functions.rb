@@ -153,7 +153,7 @@ end
 # cbz file accessor, give file name and page and you shall receive
 def open_cbz( zfile, page = 1, options = {} )
 	if !FileTest.exists?(zfile)
-		puts "error: zip file not found #{zfile}"
+		puts "error: cbz file not found #{zfile}"
 		return nil
 	end
 
