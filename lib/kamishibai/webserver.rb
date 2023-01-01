@@ -102,7 +102,7 @@ module Kamishibai
 
 			# regular expression from POST keyword search
 			def pregex
-				keyword = request['keyword'].untaint
+				keyword = request['keyword'].untaint || ''
 				keyword = keyword.gsub(' ','.+')
 				return Regexp.new( keyword, Regexp::IGNORECASE )
 			end
