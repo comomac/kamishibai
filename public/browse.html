@@ -17,7 +17,7 @@
 		<script src="/vendor/js/jquery.scrollTo-1.4.3.1.js"></script>
 		<script src="/vendor/js/jquery.lazyload.min.js"></script>
 	</head>
-	<body>
+	<body id="body">
 		<div id="navtop">
 			<span class="pull-left" data-localize="browse.Path">Path</span>
 			<ol class="breadcrumb pull-left" id="path">
@@ -47,7 +47,7 @@
 				<span class="glyphicon glyphicon-wrench">&nbsp;</span>
 				<span data-localize="browse.Preferences">Preferences</span>
 			</div>
-			<div class="btn btn-primary" tabindex="-1" href="#" onclick="toggleFullScreen(document.documentElement); $('#dropdown').addClass('hidden'); return false;">
+			<div class="btn btn-primary" tabindex="-1" href="#" onclick="toggleFullScreen('body'); $('#dropdown').addClass('hidden'); return false;">
 				<span class="glyphicon glyphicon-fullscreen">&nbsp;</span>
 				<span data-localize="toggleFullScreen">Full Screen</span>
 			</div>
