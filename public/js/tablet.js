@@ -12,10 +12,11 @@ function searchBoxOnKeyUp(e) {
 
 	if (e.keyCode == 13) {
 		// enter key, unfocus the searchbox
-		$(e.originalTarget).blur();
+		var sb = $('#searchbox');
+		sb.blur();
 
 		// search
-		reload_leftmenu(false, e.originalTarget.value);
+		reload_leftmenu(false, sb.val());
 	}
 }
 
