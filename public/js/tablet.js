@@ -199,8 +199,15 @@ function reload_books( bookcodes, options ) {
 			var pages = book.pages;
 			var pc    = Math.round(page / pages * 100); // percentage read
 			var pc2   = pc === 0 ? 0 : pc + 1; // if never read, then make it all 0
+			span.addClass('title');
 			span.css('background', 'linear-gradient(to right, rgba(51,204,102,1) ' + pc + '%,rgba(234,234,234,1) ' + pc2 + '%)');
 			a.append(span);
+
+			// show total pages
+			var spanPages = $('<span>');
+			spanPages.addClass('badge badge-info bookpages');
+			spanPages.text(book.pages);
+			a.append(spanPages);
 
 			li.append(a);
 			el.append(li);
