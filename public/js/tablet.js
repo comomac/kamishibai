@@ -138,6 +138,9 @@ function reload_books( bookcodes, options ) {
 		var menuSelect = get_topmenu_selection();
 
 		// show book title and author
+		var funcShowAuthor = function(event) {
+			reload_leftmenu($('#bc5'), event.data.author);
+		};
 		el = $('#bookinfo');
 		el.empty();
 		el.attr('bookcodes', bookcodes); // remember requested bookcodes
@@ -146,24 +149,23 @@ function reload_books( bookcodes, options ) {
 
 			// show author first, otherwise long title might block author
 			var author = $('<div>');
-			author.attr('author', book.author);
-			author.html(book.author);
-			author.on('click', function() {
-				var this_author = $(this).attr('author');
-				exe_show_author(this_author);
-			});
+			author.text(book.author);
+			author.on('click', {author: book.author} ,funcShowAuthor);
 			el.append(author);
 
 			// show book names if it is not auther listing
 			if (menuSelect !== 'author') {
 				var title = $('<div>');
-				title.html(book.title);
+				title.text(book.title);
 				el.append(title);
 			}
 			break;
 		}
 
 		// list books
+		var funcReadBook = function(event) {
+			readBook(event.data.bookcode, event.data.bookpage);
+		};
 		el = $('#books');
 		el.empty();
 		for (bookcode in jData) {
@@ -176,9 +178,7 @@ function reload_books( bookcodes, options ) {
 			var apage = 1;
 			if (!!book.page) apage = book.page;
 			a.attr('href', '#book=' + bookcode + '&page=' + apage);
-			a.on('click', { bookcode: bookcode, bookpage: apage }, function(event) {
-				readBook(event.data.bookcode, event.data.bookpage);
-			});
+			a.on('click', { bookcode: bookcode, bookpage: apage }, funcReadBook);
 
 			var img = $('<img>');
 			img.attr('src', '/api/book/thumb/' + bookcode);
@@ -189,9 +189,9 @@ function reload_books( bookcodes, options ) {
 
 			// show book names if author book listing
 			if (menuSelect === 'author') {
-				span.html(book.title);
+				span.text(book.title);
 			} else {
-				span.html(book.sname);
+				span.text(book.sname);
 			}
 		
 			// set page progress
@@ -207,19 +207,6 @@ function reload_books( bookcodes, options ) {
 		}
 	});
 
-}
-
-function exe_show_author( author ) {
-	var bcs = $('#bcs');
-
-	// save author and keyword
-	bcs.attr('keyword', sb.val());
-	bcs.attr('author',  author);
-
-	// change search to author
-	$('#searchbox').val(author);
-
-	$('#bc5').trigger('click');
 }
 
 function get_topmenu_selection() {
@@ -264,23 +251,20 @@ var battery_level = '-1';
 var onFlipActionDelay = 1000;
 
 
-function readBook(bc, bp) {
-	// bc, bookcode
-	// bp, bookpage
-
+function readBook(bookcode, bookpage) {
 	// destroy exiting gallery already exists
 	destroyGallery(false);
 
 	// set screen size so if the image is resized, server remember the screen size
 	setScreenSize();
 
-	$.get('/api/books/info', { bookcodes: bc }, function(jData) {
+	$.get('/api/books/info', { bookcodes: bookcode }, function(jData) {
 		$('#container').removeClass('hidden');
 
-		book = jData[bc];
+		book = jData[bookcode];
 
-		book.bookcode = bc;
-		book.lastpage = bp || book.page || 1;
+		book.bookcode = bookcode;
+		book.lastpage = bookpage || book.page || 1;
 
 		$('#booktitle').html('<div>' + book.title + '</div>');
 
@@ -293,7 +277,7 @@ function readBook(bc, bp) {
 		if (window.location.hash !== hstr) window.location.hash = hstr;
 
 		// create gallery
-		createGallery(bp);
+		createGallery(bookpage);
 
 		// force trigger hashchange to load correct page
 		// window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -673,7 +657,7 @@ function loadImage() {
 	}.bind({
 		dat: dat
 	}));
-	
+
 	// exec
 	if (typeof dat.url === "string") {
 		img.attr('src', dat.url.replace("null","1"));
