@@ -279,6 +279,7 @@ module Kamishibai
 				o.rtime    = h['rtime'] # last read time
 				o.page     = h['page']  # last read page
 				o.pages    = h['pages']
+				o.exists   = FileTest.exists?( h['fullpath'] )
 
 				unless o.pages
 					puts "Book contain no images!!! skipping... #{bookcode} #{o.fullpath}"
