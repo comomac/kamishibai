@@ -98,10 +98,10 @@ module Kamishibai
 			bookcodes = []
 			for bookcode, book in @db
 				if File.exists?( book.fullpath )
-					book.fullpath_valid = true
+					book.exists = true
 					bookcodes << bookcode
 				else
-					book.fullpath_valid = false
+					book.exists = false
 				end
 			end
 
@@ -184,7 +184,8 @@ module Kamishibai
 						:itime    => book.itime,
 						:rtime    => book.rtime,
 						:page     => book.page,
-						:pages    => book.pages
+						:pages    => book.pages,
+						:exists   => book.exists,
 					}
 				}
 				File.binwrite( @db_savepath, JSON.pretty_generate( db ) )
@@ -292,7 +293,7 @@ module Kamishibai
 				# if book exists
 				if File.exists?( o.fullpath )
 					fs = File.stat( o.fullpath )
-					o.fullpath_valid = true
+					o.exists = true
 
 					# repopulate data if doesn't exist
 					o.title    = Kamishibai::CBZFilename.title( o.fullpath )  unless o.title

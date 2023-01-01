@@ -424,7 +424,7 @@ module Kamishibai
 		post '/api/books/all' do
 			titles = {}
 			$db.books.each { |bookcode, book|
-				next unless book.fullpath_valid
+				next unless book.exists
 				next unless book.title
 				next unless pregex.match( book.title )
 
@@ -453,7 +453,7 @@ module Kamishibai
 		post '/api/books/new' do
 			titles = {}
 			$db.books.each { |bookcode, book|
-				next unless book.fullpath_valid
+				next unless book.exists
 				next unless book.itime
 				next unless Time.now.to_i - book.itime < 3600*24*$settings.new_book_days
 				next unless book.title
@@ -499,7 +499,7 @@ module Kamishibai
 		post '/api/books/reading' do
 			titles = {}
 			$db.books.each { |bookcode, book|
-				next unless book.fullpath_valid
+				next unless book.exists
 				next unless book.page
 				next unless book.page < book.pages
 				next unless book.title
@@ -544,7 +544,7 @@ module Kamishibai
 		post '/api/books/finished' do
 			titles = {}
 			$db.books.each { |bookcode, book|
-				next unless book.fullpath_valid
+				next unless book.exists
 				next unless book.page
 				next unless book.page == book.pages
 				next unless book.title
@@ -589,7 +589,7 @@ module Kamishibai
 		post '/api/books/author' do
 			authors = {}
 			$db.books.each { |bookcode, book|
-				next unless book.fullpath_valid
+				next unless book.exists
 				next unless book.author
 				next unless pregex.match( book.author )
 

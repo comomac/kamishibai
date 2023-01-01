@@ -41,8 +41,8 @@ module Kamishibai
 	end
 		
 	class Book
-		attr_reader :bookcode, :title, :author, :fullpath, :mtime, :itime, :rtime, :size, :inode, :page, :pages, :fullpath_valid
-		attr_writer :bookcode, :title, :author,            :mtime, :itime, :rtime, :size, :inode, :page, :pages, :fullpath_valid
+		attr_reader :bookcode, :title, :author, :fullpath, :mtime, :itime, :rtime, :size, :inode, :page, :pages, :exists
+		attr_writer :bookcode, :title, :author,            :mtime, :itime, :rtime, :size, :inode, :page, :pages, :exists
 
 		def initialize(bookcode=nil, fullpath=nil)
 			if bookcode and fullpath
@@ -53,7 +53,7 @@ module Kamishibai
 					@mtime = fs.mtime.to_i
 
 					# mark the path as valid, aka book exists in path
-					@fullpath_valid = true
+					@exists = true
 				end
 
 				# create book title
@@ -90,7 +90,7 @@ module Kamishibai
 			@fullpath = newfullpath
 
 			if File.exists?(newfullpath)
-				@fullpath_valid = true
+				@exists = true
 			end
 		end
 	end
