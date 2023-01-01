@@ -47,7 +47,7 @@ function updir() {
 
 function exe_order_by(str) {
 	// toggle the order button
-	$('.nav-collapse').collapse('toggle');
+	$('#dropdown').addClass('hidden');
 	
 	$.cookie(uport() + '.order_by', str, { path: '/' });
 
@@ -55,12 +55,20 @@ function exe_order_by(str) {
 }
 
 function reload_sources() {
-	var ul = $('#ul-sources');
+	var ul = $('#bookmark-sources');
 	ul.empty();
+
+	var onclick = function(event) {
+		$('#dropdown').addClass('hidden');
+		window.location.hash = "dir=" + event.data.source;
+	};
 
 	$.get('/api/sources', function(sources) {
 		for (var i in sources) {
-			ul.append('<li><a tabindex="-1" href="#dir=' + sources[i] + '" rel="' + sources[i] + '">' + i + '&nbsp;<i class="icon-bookmark"></i>&nbsp;' + sources[i] + '</a></li>');
+			var div = $('<div class="btn btn-primary" tabindex="-1">');
+			div.text(i + ' ' + sources[i]);
+			div.on('click', { source: sources[i] }, onclick);
+			ul.append(div).append("&nbsp;");
 		}
 	});
 }
@@ -207,7 +215,7 @@ function countdownDelete(el, time) {
 function delete_enable() {
 	isDeleteMode = true;
 
-	$('.nav-collapse').collapse('toggle');
+	$('#dropdown').addClass('hidden');
 
 	var el = $('#btnDeleteDisable');
 	el.removeClass('hidden');
@@ -316,7 +324,7 @@ $(function() {
 			// enter key || escape key, unfocus the searchbox
 			$('#searchbox').blur();
 			// close top menu
-			$('#navcollapse').removeClass('in');
+			$('#dropdown').addClass('hidden');
 		}
 
 		// get dir from hash
@@ -348,7 +356,7 @@ $(function() {
 			}
 			else {
 				// click the first source if there is no lastpath
-				window.location.hash = $('#ul-sources').find('LI A').eq(0).attr('href');
+				window.location.hash = $('#bookmark-sources').find('LI A').eq(0).attr('href');
 			}
 		}, 50);
 
