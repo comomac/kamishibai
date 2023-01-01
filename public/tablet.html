@@ -19,8 +19,17 @@
 		<script src="/vendor/js/iscroll-infinite.js"></script>
 		<script src="/js/swipeview-k.js"></script>
 		
+		<script>
+			// hacky solution to prevent ios browser pan/scroll whole page when the child div is touched/dragged
+			// have to put here, so it loads first before anything other things happen
+			$(function() {
+				$('#iwrapper').on('touchmove', function () {
+					return false;
+				});
+			})
+		</script>
 		<script src="/js/utilities.js"></script>
-		<script src="/js/tablet.js"></script>		
+		<script src="/js/tablet.js"></script>
     </head>
 
 	<body onload="onload();">
