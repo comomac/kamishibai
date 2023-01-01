@@ -131,8 +131,6 @@ function reload_books( bookcodes, options ) {
 		return false;
 	}
 
-	var bookcode = bookcodes.split(',')[0];
-
 	$.get('/api/books/info', { bookcodes: bookcodes, options: options }, function(jData) {
 		var el; // html element
 		var bookcode; // str
@@ -148,9 +146,11 @@ function reload_books( bookcodes, options ) {
 
 			// show author first, otherwise long title might block author
 			var author = $('<div>');
+			author.attr('author', book.author);
 			author.html(book.author);
 			author.on('click', function() {
-				exe_show_author(book.author);
+				var this_author = $(this).attr('author');
+				exe_show_author(this_author);
 			});
 			el.append(author);
 
@@ -227,7 +227,7 @@ function get_topmenu_selection() {
 
 	var n;
 	if (id) {
-		n = parseInt( id.replace('bc','') );
+		n = parseInt(id.replace('bc',''), 10);
 	}
 
 	if (n === 1) return 'all';
@@ -265,7 +265,6 @@ var onFlipActionDelay = 1000;
 
 
 function readBook(bc, bp) {
-	console.log('readBook', arguments)
 	// bc, bookcode
 	// bp, bookpage
 
@@ -320,7 +319,7 @@ function updateReaderFooter(page) {
 }
 
 function sliderValue(el, e) {
-	var el = $(el);
+	el = $(el);
 	var min = Number(el.attr('min'));
 	var max = Number(el.attr('max'));
 	var t;
@@ -350,7 +349,7 @@ function sliderValue(el, e) {
 
 // destroy and remove the gallery
 function destroyGallery(resetHash) {
-	if (gallery) gallery.destroy;
+	if (gallery) gallery.destroy();
 	$('#wrapper').empty();
 
 	// remove listener
@@ -413,7 +412,7 @@ function createGallery(goPage) {
 		el.onload = function () {
 			this.className = '';
 			this.previousSibling.className = '';
-		}
+		};
 		gallery.masterPages[i].appendChild(el);
 	}
 	// stagger loading image to reduce load
@@ -553,7 +552,6 @@ function createGallery(goPage) {
 				// escape button, go back to browse
 				closeReader();
 				return false;
-				break;
 			case 13:
 				// enter key, show/hide menu
 				togglemenu();
@@ -564,7 +562,7 @@ function createGallery(goPage) {
 
 // set the bookmark
 function setBookmark(bookcode, page) {
-	var page = getpage();
+	page = getpage();
 
 	if (book.lastpage == page || page < 1 || page > book.pages) return false;
 
@@ -602,7 +600,7 @@ function goToPage(page) {
 	console.log('going to page', page);
 	if (page < 1) return false;
 	if (isNaN(page)) {
-		page = 1
+		page = 1;
 	}
 
 	if (isEasternBook()) {
@@ -641,7 +639,7 @@ function staggerImages(page) {
 		{
 			igal: '[data-page-index=' + (i-1) + ']',
 			url: "/api/book/page/" + book.bookcode + "/" + (page - 1)
-		},
+		}
 	];
 
 	// do first image
@@ -656,10 +654,8 @@ function loadImage() {
 
 	window.currentImage = dat;
 
-	var img = el = $('<img>');
+	var img = $('<img>');
 	img.on('load', function() {
-		console.log('loaded image in background', this.dat)
-
 		// change img src
 		var el = $(this.dat.igal);
 		el.find('img').attr('src', this.dat.url).removeClass('loading');
@@ -670,15 +666,15 @@ function loadImage() {
 		if (window.imageQueue && window.imageQueue.length > 0) {
 			loadImage();
 		}
-		// all done, clear
 		else {
+			// all done, clear
 			window.currentImage = false;
 		}
 	}.bind({
 		dat: dat
 	}));
+	
 	// exec
-	console.log('starting image', dat)
 	if (typeof dat.url === "string") {
 		img.attr('src', dat.url.replace("null","1"));
 	} else {
@@ -688,7 +684,7 @@ function loadImage() {
 
 // get the page from hash
 function getpage() {
-	var i = parseInt( getHashParams("page") );
+	var i = parseInt(getHashParams("page"), 10);
 	if (typeof i === "number" && ! isNaN(i) ) {
 		return i;
 	}
@@ -927,7 +923,7 @@ function iScrollLoad(maxLength) {
 	$('.irow').text('').prop('onclick', null).off('click');
 	
 	// scroll to last Y position
-	var lastScrollY = parseInt($.cookie(uport() + '.' + get_topmenu_selection() + '.lastScrollY'));
+	var lastScrollY = parseInt($.cookie(uport() + '.' + get_topmenu_selection() + '.lastScrollY'), 10);
 	if (isNaN(lastScrollY)) {
 		lastScrollY = 0;
 	}
@@ -942,7 +938,7 @@ function iScrollLoad(maxLength) {
 		startY: lastScrollY,
 		scrollEnd: function(e, x) {
             // not working, not called, need more investigate if it even exists
-			console.log(111, e, 222, x)
+			console.log(111, e, 222, x);
 		}
 	});
 
@@ -1008,5 +1004,5 @@ function iScrollUpdateContent(el, data) {
 
 		// load books and details
 		reload_books( bookcodes, options );
-	}
+	};
 }
