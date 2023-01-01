@@ -18,14 +18,6 @@
 		<script src="/vendor/js/jquery.lazyload.min.js"></script>
 	</head>
 	<body>
-		<script>
-			$(function() {
-				// hacky solution to prevent ios browser pan/scroll whole page when the child div is touched/dragged
-				$('#dropdown').on('touchmove', function(event) {
-					event.preventDefault();
-				});
-			})
-		</script>
 		<div id="navtop">
 			<span class="pull-left" data-localize="browse.Path">Path</span>
 			<ol class="breadcrumb pull-left" id="path">

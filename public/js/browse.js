@@ -306,6 +306,11 @@ document.onkeydown = function(e) {
 
 // page init
 $(function() {
+	// hacky solution to prevent ios browser pan/scroll whole page when the child div is touched/dragged
+	$('#dropdown').on('touchmove', function(event) {
+		event.preventDefault();
+	});
+
 	// load the text localization
 	reload_locale();
 
