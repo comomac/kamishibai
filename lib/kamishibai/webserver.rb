@@ -100,11 +100,27 @@ module Kamishibai
 				end
 			end
 
-			# regular expression from POST keyword search
-			def pregex
-				keyword = request['keyword'].untaint || ''
-				keyword = keyword.gsub(' ','.+')
-				return Regexp.new( keyword, Regexp::IGNORECASE )
+			# search_words gives an array of words that user is looking for
+			def search_words(keyword='')
+				# convert all other white space characters to normal space character
+				keyword = keyword.downcase
+				for spc in white_space_characters
+					keyword = keyword.gsub(spc,' ')
+				end
+
+				# words to search for
+				return keyword.split(' ').compact
+			end
+
+			def white_space_characters
+				# white space characters
+				# https://en.wikipedia.org/wiki/Whitespace_character
+				return [
+					"\u{0009}", "\u{0020}", "\u{00a0}", "\u{1680}", "\u{2000}", 
+					"\u{2001}", "\u{2002}", "\u{2003}", "\u{2004}", "\u{2004}", 
+					"\u{2005}", "\u{2006}", "\u{2007}", "\u{2008}", "\u{2009}", 
+					"\u{200a}", "\u{202f}", "\u{205f}", "\u{3000}" 
+				]
 			end
 		end
 
@@ -192,6 +208,7 @@ module Kamishibai
 			html << "\t<li class=\"directory collapsed updir\"><a href=\"#dir=#{File.dirname(path)}\" rel=\"#{File.dirname(path)}/\"><img src=\"/images/folder-mini-up.png\" /><span>..</span></a></li>\n"
 
 
+			keywords = search_words(request['keyword'])
 
 			# poulate the lists with files(books) and directory
 			lists = []
@@ -202,8 +219,18 @@ module Kamishibai
 				f =   File.basename(fp)
 				ext = File.extname(fp)[1..-1]
 
-				next unless pregex.match( f ) # skip unless file/dir name match the searchbox's keyword
-
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if f.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+				
 				if FileTest.directory?(fp) and File.stat(fp).executable_real?
 					# a directory
 					lists << fp
@@ -422,11 +449,24 @@ module Kamishibai
 
 		# show all unique titles
 		post '/api/books/all' do
+			keywords = search_words(request['keyword'])
+
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.exists
 				next unless book.title
-				next unless pregex.match( book.title )
+
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
 
 				if titles[ book.title ]
 					titles[ book.title ] << book.bookcode
@@ -451,13 +491,26 @@ module Kamishibai
 
 		# lists containing newly imported books
 		post '/api/books/new' do
+			keywords = search_words(request['keyword'])
+
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.exists
 				next unless book.itime
 				next unless Time.now.to_i - book.itime < 3600*24*$settings.new_book_days
 				next unless book.title
-				next unless pregex.match( book.title )
+
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
 
 				if titles[ book.title ]
 					titles[ book.title ] << book.bookcode
@@ -497,13 +550,26 @@ module Kamishibai
 
 		# lists books that are unfinish reading
 		post '/api/books/reading' do
+			keywords = search_words(request['keyword'])
+
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.exists
 				next unless book.page
 				next unless book.page < book.pages
 				next unless book.title
-				next unless pregex.match( book.title )
+				
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
 
 				if titles[ book.title ]
 					titles[ book.title ] << book.bookcode
@@ -542,13 +608,26 @@ module Kamishibai
 
 		# lists books that are finish reading
 		post '/api/books/finished' do
+			keywords = search_words(request['keyword'])
+
 			titles = {}
 			$db.books.each { |bookcode, book|
 				next unless book.exists
 				next unless book.page
 				next unless book.page == book.pages
 				next unless book.title
-				next unless pregex.match( book.title )
+				
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
 
 				if titles[ book.title ]
 					titles[ book.title ] << book.bookcode
@@ -587,11 +666,24 @@ module Kamishibai
 
 		# show books grouped by author
 		post '/api/books/author' do
+			keywords = search_words(request['keyword'])
+
 			authors = {}
 			$db.books.each { |bookcode, book|
 				next unless book.exists
 				next unless book.author
-				next unless pregex.match( book.author )
+
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.author.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
 
 				if authors[ book.author ]
 					authors[ book.author ] << book.bookcode
