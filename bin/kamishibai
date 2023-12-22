@@ -55,5 +55,3 @@ at_exit do
 		`#{exe} #{opt_d} "#{$KAMISHIBAI_CONFIG_PATH}"`
 	end
 end
-
-Kamishibai::Webserver.run!

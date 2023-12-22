@@ -18,7 +18,7 @@ module Kamishibai
 			@db_savepath = db_filepath
 			@db_dirty = true
 
-			if File.exists?( @db_savepath )
+			if File.exists?( @db_savepath ) and File.size( @db_savepath ) > 0
 				load_database
 			else
 				# create fresh database
@@ -342,7 +342,7 @@ module Kamishibai
 			bookmarks = {}
 			newfile = false
 			# create file
-			if ! FileTest.exist?( @bookmarks_savepath )
+			if ! FileTest.exist?( @bookmarks_savepath ) or File.size( @bookmarks_savepath ) == 0
 				newfile = true
 				File.binwrite( @bookmarks_savepath, "{}" )
 			end
