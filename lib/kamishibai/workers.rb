@@ -10,7 +10,6 @@ def start_auto_save
 	Thread.new {
 		while true
 			$db.save
-			$db.save_bookmarks
 			sleep 60
 		end
 	}

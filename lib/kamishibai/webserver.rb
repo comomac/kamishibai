@@ -19,7 +19,6 @@ module Kamishibai
 		# shutdown hook, save database and bookmarks when exiting
 		at_exit do
 			$db.save
-			$db.save_bookmarks
 		end
 
 		# smaller, quicker web server
@@ -845,11 +844,6 @@ module Kamishibai
 		#
 		########################################
 
-		# flush bookmarks from memory to hdd
-		get '/save_bookmarks' do
-			$db.save_bookmarks
-		end
-		
 		# restart webserver
 		get '/restart' do
 			$RERUN = true

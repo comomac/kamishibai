@@ -29,13 +29,20 @@ module Kamishibai
 				@inodes = {}
 			end
 
-
 			# bookmark section
 			@bookmarks_savepath = bookmarks_filepath
-			@bookmarks_dirty = false
 
+			# restore bookmark
 			if File.exists?( @bookmarks_savepath )
-				load_bookmarks
+				bookmarks = read_bookmarks
+				bookmarks.each { |bookcode, h|
+					o = get_book(bookcode)
+					o.page  = h['p']
+					o.rtime = h['r']
+				}
+				if bookmarks.length > 0
+					@db_dirty = true
+				end
 			end
 		end
 
@@ -60,10 +67,12 @@ module Kamishibai
 
 		def set_bookmark(bookcode, page)
 			puts "set_bookmark #{bookcode} #{page}" if $debug
-			@bookmarks_dirty = true
 			o = get_book(bookcode)
 			o.page  = page
 			o.rtime = Time.now.to_i
+			@db_dirty = true
+
+			save_bookmarks(o)
 		end
 
 		def get_bookmark(bookcode)
@@ -198,7 +207,11 @@ module Kamishibai
 			if ! FileTest.exists?( File.dirname( @db_savepath ) )
 				FileUtils.mkdir_p( File.dirname( @db_savepath ) )
 			end
+
+			# load bookmarks file
+			bookmarks = read_bookmarks
 			
+			# save db (big file)
 			db = {}
 			@db.each { |bookcode, book|
 				next unless book.pages # skip invalid book that contain no page/images
@@ -215,42 +228,39 @@ module Kamishibai
 					:page     => book.page,
 					:pages    => book.pages
 				}
+
+				# overwrite with bookmark
+				if bookmarks[ bookcode ]
+					db[ bookcode ][:page]  = bookmarks[ bookcode ][:page]
+					db[ bookcode ][:rtime] = bookmarks[ bookcode ][:rtime]
+				end
 			}
 			File.binwrite( @db_savepath, JSON.pretty_generate( db ) )
-			
 			@db_dirty = false
+
+			# clear bookmarks file if there is any
+			if bookmarks.length > 0
+				File.binwrite(@bookmarks_savepath, "{}")
+			end
 
 			puts "save db done. #{db.length} books. #{Time.now}" if $debug
 		end
 
 		# save bookmarks
-		def save_bookmarks
-			if @bookmarks_dirty
-				# save bookmarks
-				if ! FileTest.exists?( File.dirname( @bookmarks_savepath ) )
-					FileUtils.mkdir_p( File.dirname( @bookmarks_savepath ) )
-				end
+		# provide one book, but save with all other books(marks)
+		def save_bookmarks(book)
+			# load bookmarks file
+			bookmarks = read_bookmarks
 
-				bookmarks = {}
-				@db.each { |bookcode, book|
-					page = book.page  # last read page
-					time = book.rtime # last read time
-
-					if page and page > 1
-						dat = {
-							:p => page,
-							:r => time
-						}
-						bookmarks[bookcode] = dat
-					end
-				}
-				
-				File.binwrite( @bookmarks_savepath, JSON.pretty_generate( bookmarks ) )
-				
-				@bookmarks_dirty = false
-
-				puts "bookmarks saved (#{bookmarks.length} bookmarks) #{Time.now}" if $debug
-			end
+			# then overwrite it
+			bookmarks[ book.bookcode ] = {
+				:p => book.page,
+				:r => book.rtime
+			}
+			
+			File.binwrite( @bookmarks_savepath, JSON.fast_generate( bookmarks, :object_nl=>"\n", :indent=>" " ) )
+			
+			puts "bookmarks saved (#{bookmarks.length} bookmarks) #{Time.now}" if $debug
 		end
 
 
@@ -322,18 +332,38 @@ module Kamishibai
 			#              @inodes = { inode_a => bookcode_a, inode_b => bookcode_b, ... }
 		end
 
-		# load bookmarks
-		def load_bookmarks
+		# load bookmarks file (small), more upto date
+		def read_bookmarks
+			# create dir
+			if ! FileTest.exists?( File.dirname( @bookmarks_savepath ) )
+				FileUtils.mkdir_p( File.dirname( @bookmarks_savepath ) )
+			end
+
 			bookmarks = {}
+			newfile = false
+			# create file
+			if ! FileTest.exist?( @bookmarks_savepath )
+				newfile = true
+				File.binwrite( @bookmarks_savepath, "{}" )
+			end
 
-			str = File.binread( @bookmarks_savepath )
-
-			JSON.parse( str ).each { |bookcode, h|
-				if get_book( bookcode )
-					get_book( bookcode ).page  = h['p']
-					get_book( bookcode ).rtime = h['r']
-				end
+			bookmarks = {
+				# bookcode => {p: 1, r: 1}
 			}
+			# skip for brand new file
+			unless newfile
+				str = File.binread( @bookmarks_savepath )
+				JSON.parse( str ).each { |bookcode, h|
+					bookmarks[ bookcode ] = {
+						:page  => h['p'],
+						:rtime => h['r']
+					}
+				}
+			end
+
+			puts "read bookmarks done. #{bookmarks.length} bookmarks" if $debug
+
+			return bookmarks
 		end
 	end
 end
