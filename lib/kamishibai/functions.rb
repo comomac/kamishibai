@@ -5,7 +5,6 @@
 # for available_drives
 require 'win32ole' if RbConfig::CONFIG['host_os'] =~ /ming/
 
-
 require 'zip/filesystem'
 if RUBY_PLATFORM == 'java'
 	require 'image_voodoo'
@@ -128,25 +127,34 @@ end
 
 # returns total number of pages for cbz file
 def cbz_pages?( zfile )
-	i = 0
 	begin
+		count = 0
 		Zip::File.open( zfile ) { |x|
 			x.each { |zobj|
-				if zobj.ftype == :file and File.basename(zobj.name)[0] != '.' and File.basename( zobj.name ) =~ /\.(jpg|jpeg|png|gif)$/i
-					i += 1
-				end
+				next if zobj.ftype != :file
+				file_name = File.basename(zobj.name)
+				next if file_name[0] == '.'
+				next unless file_name =~ /\.(jpg|jpeg|png|gif)$/i
+				count += 1
 			}
 		}
-	rescue
-		return nil
+		return count
+	rescue => err
+		puts "error opening cbz. #{err}"
 	end
-	return i
+	return nil
 end
 
-# allow natural sort for filename
 class String
+	# allow natural sort for filename
 	def naturalized
-		scan(/[^\d\.]+|[\d\.]+/).collect { |f| f.match(/\d+(\.\d+)?/) ? f.to_f : f }
+		# HACK: to fix ArgumentError (comparison of Array with Array failed).
+		# cause: result like 1<=>"b" == nil, when it should be -1/0/1 for comparison during sort.
+		# solution: turn number into float then up to 15 leading zero and 5 decimal float, then into string.
+		# gotcha: sort wrong when number exceed 15 digits long or decimal exceed 5 decimals.
+		# note: 21 - 5 - 1(dot) = 15
+		scan(/[^\d\.]+|[\d\.]+/).collect { |s| s.match(/\d+(\.\d+)?/) ? ("%.5f" % s.to_f).rjust(21, "0") : s
+		}
 	end
 end
 
@@ -159,40 +167,44 @@ def open_cbz( zfile, page = 1, options = {} )
 
 	objs = []
 	begin
+		puts "open_cbz(#{zfile}, #{page})" if $debug
 		Zip::File.open( zfile ) { |x|
 			x.each { |zobj|
-				if zobj.ftype == :file and File.basename(zobj.name)[0] != '.' and File.basename( zobj.name ) =~ /\.(jpg|jpeg|png|gif)$/i
-					objs << zobj
-				end
+				next if zobj.ftype != :file
+				file_name = File.basename(zobj.name)
+				next if file_name[0] == '.'
+				next unless file_name =~ /\.(jpg|jpeg|png|gif)$/i
+				objs << zobj
 			}
-			objs.sort_by! { |zobj| zobj.name.to_s.naturalized }
-
+			
 			if objs.length == 0
 				puts "error: no image detected. #{zfile}"
 				return nil
 			elsif page > objs.length or page < 1
 				puts "error: no such page #{page} : #{zfile}"
 				return nil
-			else
-				img = objs[page-1].name
-				uimg = img.clone.force_encoding('UTF-8') # unicode version of filename, or it won't print on puts
-				puts "reading image… #{page} : #{uimg} : #{zfile}" if $debug
-
-				simg = x.file.read(img)
-
-				begin
-					# load the image to check if the image is corrupted or not
-					GD2::Image.load( simg ) if defined?(GD2)
-				rescue => errmsg
-					puts "error: fail to load image #{page} : #{zfile}\n#{errmsg}"
-					return nil
-				end
-
-				return simg
 			end
+
+			objs.sort_by! { |zobj| zobj.name.to_s.naturalized }
+			
+			img_name = objs[page-1].name
+			img_uname = img_name.clone.force_encoding('UTF-8') # unicode version of filename, or it won't print on puts
+			puts "reading image… #{page} : #{img_uname} : #{zfile}" if $debug
+
+			img_bin = x.file.read(img_name)
+
+			begin
+				# load the image to check if the image is corrupted or not
+				GD2::Image.load( img_bin ) if defined?(GD2)
+			rescue => errmsg
+				puts "error: fail to load image #{page} : #{img_uname} : #{zfile}\n#{errmsg}"
+				return nil
+			end
+
+			return img_bin
 		}
 	rescue => e
-		puts "Failed to open zip file.\n#{e.exception}\n#{e.backtrace}"
+		puts "Error: Failed to open zip file.\nException: #{e.exception}\nTrace: #{e.backtrace.join("\n\t")}"
 		return nil
 	end
 end

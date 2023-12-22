@@ -39,25 +39,6 @@ module Kamishibai
 			end
 		end
 
-		def add_book(filepath)
-			bookcode = gen_bookcode
-			o = Kamishibai::Book.new(bookcode, filepath)
-
-			if o.pages
-				@db[ bookcode ] = o
-				@bookcodes << bookcode
-				if File.exists?( filepath )
-					@files[ File.basename( filepath ).delete('ÿ') ] = bookcode # utf8-mac puts ÿ in filename, need to remove first for cross os support
-					@inodes[ o.inode ] = bookcode
-				end
-
-				@db_dirty = true
-
-				puts "added book. #{bookcode} #{filepath}" if $debug
-				bookcode
-			end
-		end
-
 		def has_bookcode?(bookcode)
 			@bookcodes.include?( bookcode )
 		end
@@ -124,6 +105,7 @@ module Kamishibai
 					search = '/*.cbz'
 				end
 
+				count = 0
 				Dir.glob(File.expand_path(src).escape_glob + search).delete_if { |f|
 					restricted_dir?(f)
 				}.each { |f|
@@ -134,27 +116,72 @@ module Kamishibai
 
 					if o
 						# book exists in db
-						puts "book match(m1):     #{File.basename(f)} == #{File.basename(o.fullpath)}" if $debug == 2
+						puts "book match(m1):     #{File.basename(f)} == #{File.basename(o.fullpath)}" if $debug
 						
 						# update data with new path
 						o.fullpath = f
+						o.exists   = true
 
 						# update index, as bookcodes is the list that keeps actual books that exists
 						@bookcodes << o.bookcode
+
+						@db_dirty = true
 					elsif o2 and fs.size == o2.size
 						# found existing book using inode and size, can detected changed filename in same filesystem
-						puts "book match(m2):     #{File.basename(f)} == #{File.basename(o2.fullpath)}" if $debug == 2
+						puts "book match(m2):     #{File.basename(f)} == #{File.basename(o2.fullpath)}" if $debug
 
 						o2.fullpath = f
 						o2.title    = Kamishibai::CBZFilename.title( f )
 						o2.author   = Kamishibai::CBZFilename.author( f )
+						o2.exists   = true
 
 						# update indexes
 						@bookcodes << o2.bookcode
 						@files[ File.basename(f) ] = o2.bookcode
+
+						@db_dirty = true
 					else
 						# book don't exist in db
-						self.add_book(f)
+						# create new
+						puts "new book (nm):      #{File.basename(f)}" if $debug
+
+						# make sure it is cbz
+						pages = cbz_pages?(f)
+						if pages.to_i <= 0
+							puts "skip - not cbz file or no image(s). #{f}"
+							next
+						end
+
+						fs = File.stat( f )
+
+						# create new book object for db
+						o = Kamishibai::Book.new(
+							:bookcode => gen_bookcode,
+							:fullpath => f,
+							:title    => Kamishibai::CBZFilename.title( f ),
+							:author   => Kamishibai::CBZFilename.author( f ),
+							:exists   => true,
+							:pages    => pages,
+							:size     => fs.size,
+							:mtime    => fs.mtime,
+							:inode    => fs.ino
+						)
+
+						# update indexes
+						@db[ o.bookcode ] = o
+						@bookcodes << o.bookcode
+						@files[ File.basename(f) ] = o.bookcode
+						@inodes[ o.inode ] = o.bookcode
+
+						puts "   added book. #{o.bookcode}" if $debug
+
+						@db_dirty = true
+					end
+
+					# save every 100th
+					count += 1
+					if count % 100 == 0
+						self.save
 					end
 				}
 			end
@@ -163,37 +190,37 @@ module Kamishibai
 		end
 
 		# save database
-		def save
-			if @db_dirty
-				# create dir if dir doesn't exist
-				if ! FileTest.exists?( File.dirname( @db_savepath ) )
-					FileUtils.mkdir_p( File.dirname( @db_savepath ) )
-				end
-				
-				db = {}
-				@db.each { |bookcode, book|
-					next unless book.pages # skip invalid book that contain no page/images
-
-					db[ bookcode ] = {
-						:title    => book.title,
-						:author   => book.author,
-						:fullpath => book.fullpath,
-						:size     => book.size,
-						:inode    => book.inode,
-						:mtime    => book.mtime,
-						:itime    => book.itime,
-						:rtime    => book.rtime,
-						:page     => book.page,
-						:pages    => book.pages,
-						:exists   => book.exists,
-					}
-				}
-				File.binwrite( @db_savepath, JSON.pretty_generate( db ) )
-				
-				@db_dirty = false
-
-				puts "db saved (#{db.length} books) #{Time.now}" if $debug
+		def save(force=false)
+			force = true if @db_dirty
+			return unless force
+			
+			# create dir if dir doesn't exist
+			if ! FileTest.exists?( File.dirname( @db_savepath ) )
+				FileUtils.mkdir_p( File.dirname( @db_savepath ) )
 			end
+			
+			db = {}
+			@db.each { |bookcode, book|
+				next unless book.pages # skip invalid book that contain no page/images
+
+				db[ bookcode ] = {
+					:title    => book.title,
+					:author   => book.author,
+					:fullpath => book.fullpath,
+					:size     => book.size,
+					:inode    => book.inode,
+					:mtime    => book.mtime,
+					:itime    => book.itime,
+					:rtime    => book.rtime,
+					:page     => book.page,
+					:pages    => book.pages
+				}
+			}
+			File.binwrite( @db_savepath, JSON.pretty_generate( db ) )
+			
+			@db_dirty = false
+
+			puts "save db done. #{db.length} books. #{Time.now}" if $debug
 		end
 
 		# save bookmarks
@@ -267,47 +294,27 @@ module Kamishibai
 			str = File.binread( @db_savepath )
 
 			JSON.parse( str ).each { |bookcode, h|
-				o = Kamishibai::Book.new
-				o.bookcode = bookcode
-				o.title    = h['title']
-				o.author   = h['author']
-				o.fullpath = h['fullpath']
-				o.size     = h['size']
-				o.mtime    = h['mtime']
-				o.inode    = h['inode']
-				o.itime    = h['itime'] # imported time
-				o.rtime    = h['rtime'] # last read time
-				o.page     = h['page']  # last read page
-				o.pages    = h['pages']
-				o.exists   = FileTest.exists?( h['fullpath'] )
-
-				unless o.pages
-					puts "Book contain no images!!! skipping... #{bookcode} #{o.fullpath}"
-					next
-				end
+				o = Kamishibai::Book.new(
+					:bookcode => bookcode,
+					:title    => h['title'],
+					:author   => h['author'],
+					:fullpath => h['fullpath'],
+					:size     => h['size'],
+					:mtime    => h['mtime'],
+					:inode    => h['inode'],
+					:itime    => h['itime'], # imported time
+					:rtime    => h['rtime'], # last read time
+					:page     => h['page'],  # last read page
+					:pages    => h['pages'],
+				)
 
 				@db[ o.bookcode ] = o
 				# update indexes
 				@files[ File.basename( o.fullpath ).delete('ÿ') ] = o.bookcode # utf8-mac puts ÿ in filename, need to remove first for cross os support
+				@bookcodes << o.bookcode
 				@inodes[ o.inode ] = o.bookcode
-
-				# if book exists
-				if File.exists?( o.fullpath )
-					fs = File.stat( o.fullpath )
-					o.exists = true
-
-					# repopulate data if doesn't exist
-					o.title    = Kamishibai::CBZFilename.title( o.fullpath )  unless o.title
-					o.author   = Kamishibai::CBZFilename.author( o.fullpath ) unless o.author
-					o.size     = fs.size                                      unless o.size
-					o.mtime    = fs.mtime                                     unless o.mtime
-					o.inode    = fs.ino                                       unless o.inode
-
-					# update indexes
-					@bookcodes << o.bookcode
-					@inodes[ o.inode ] = o.bookcode
-				end
 			}
+			puts "load db done. #{@db.length} books #{Time.now}"
 			
 			# db format:   @db[ bookcode ] = Book obj
 			# + indexes    @files = { basename_a => bookcode_a, basename_b => bookcode_b, ... }

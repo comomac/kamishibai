@@ -744,6 +744,12 @@ module Kamishibai
 				end
 			end
 
+			# sort by book title if possible
+			if bookcodes.length <= 100
+				pp book
+				book = books.sort { |a,b| a[:title] > b[:title] ? 1 : 0 }
+			end
+
 			JSON.pretty_generate( books )
 		end
 

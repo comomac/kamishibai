@@ -34,7 +34,7 @@ module Kamishibai
 			s.gsub!(/ [\d\.]+$/,'')
 			title = s
 
-			[author, title]
+			[author.to_s, title.to_s]
 		end
 
 		private_class_method :parse
@@ -44,38 +44,52 @@ module Kamishibai
 		attr_reader :bookcode, :title, :author, :fullpath, :mtime, :itime, :rtime, :size, :inode, :page, :pages, :exists
 		attr_writer :bookcode, :title, :author,            :mtime, :itime, :rtime, :size, :inode, :page, :pages, :exists
 
-		def initialize(bookcode=nil, fullpath=nil)
-			if bookcode and fullpath
-				@bookcode = bookcode
-				@fullpath = fullpath
-				if File.exists?( fullpath )
-					fs = File.stat( fullpath )
+		def initialize(params=nil)
+			# blank book obj
+			re†urn unless params.class == Hash
+
+			if params[:bookcode] and params[:title]
+				# load from db
+				@bookcode = params[:bookcode]  if params[:bookcode]
+				@title    = params[:title]     if params[:title]
+				@author   = params[:author]    if params[:author]
+				@fullpath = params[:fullpath]  if params[:fullpath]
+				@size     = params[:size]      if params[:size]
+				@mtime    = params[:mtime]     if params[:mtime]
+				@inode    = params[:inode]     if params[:inode]
+				@itime    = params[:itime]     if params[:itime]
+				@rtime    = params[:rtime]     if params[:rtime]
+				@page     = params[:page]      if params[:page]
+				@pages    = params[:pages]     if params[:pages]
+
+				# repopulate data if doesn't exist
+				@title    = Kamishibai::CBZFilename.title( @fullpath )  unless @title
+				@author   = Kamishibai::CBZFilename.author( @fullpath ) unless @author
+				@size     = File.state(fs).size                         unless @size
+				@mtime    = File.state(fs).mtime                        unless @mtime
+				@inode    = File.state(fs).ino                          unless @inode
+
+				unless @pages
+					puts "Book contain no images! #{fullpath}"
+				end
+
+			elsif params[:bookcode] and params[:fullpath]
+				puts '22222'
+				# load new book
+				@bookcode = params[:bookcode]
+				@fullpath = params[:fullpath]
+				if File.exists?( @fullpath )
+					fs = File.stat( @fullpath )
 					@mtime = fs.mtime.to_i
 
 					# mark the path as valid, aka book exists in path
 					@exists = true
+
+					@size   = fs.size
+					@inode  = fs.ino
 				end
 
-				# create book title
-				title = File.basename( fullpath )
-				title.gsub!(/_/,' ')
-				title.gsub!(/　/u,' ')
-				title.gsub!(/\(.+?\)/,'')
-				@author = title.scan(/\[(.+?)\]/)[0][0] if title.scan(/\[(.+?)\]/)[0] and title.scan(/\[(.+?)\]/)[0][0]
-				title.gsub!(/\[.+?\]/,'')
-				#title.gsub!(/ \S\d+.*/,'')
-				title.gsub!(/ \d{4}\S[\d\.]+.+/,'')
-				title.gsub!(/ (v|c|第)[\d\.]+.*/iu,'')
-				title.gsub!(/ vol.{0,2}[\d\.]+.*/i,'')
-				title.gsub!(/ (上|中|下)\.cbz/iu,'.cbz')
-				title.gsub!(/ \#[\d\.]+.*/i,'')
-				title.gsub!(/ ch.{0,2}[\d\.]+.*/i,'')
-				title.gsub!(/ +/,' ')
-				title.gsub!(/^ /,'')
-				title.gsub!(/\.cbz$/,'')
-				title.gsub!(/ $/,'')
-				title.gsub!(/ [\d\.]+$/,'')
-				@title = title
+				@author, @title = Kamishibai::CBZFilename.parse( o.fullpath )
 
 				@itime = Time.now.to_i
 				@pages = cbz_pages?( @fullpath )
