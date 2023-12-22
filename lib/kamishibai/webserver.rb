@@ -68,6 +68,9 @@ module Kamishibai
 		# setup instance variable
 		before do
 			# global instance var
+
+			# last any request interaction
+			$last_user_interaction_epoch = Time.now.to_i
 		end
 
 		# helper functions

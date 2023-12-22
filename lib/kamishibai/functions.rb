@@ -307,13 +307,7 @@ else
 end
 
 # create image thumbnail and save to cache
-def mk_thumb(f_cbz, auto_gen = false)
-	unless auto_gen
-		# holds the last time the open_cbz is called
-		# to pause the Thumbnail Generator thread
-		$open_cbz_ltime = Time.now
-	end
-
+def mk_thumb(f_cbz, empty_return = false)
 	quality = 60 #80
 	width = 220 #320
 	height = 0
@@ -325,7 +319,7 @@ def mk_thumb(f_cbz, auto_gen = false)
 		if File.size( f ) == 0
 			File.delete( f )
 		else
-			if auto_gen
+			if empty_return
 				# no need to return data if this is called from auto thumbnail worker
 				return
 			else

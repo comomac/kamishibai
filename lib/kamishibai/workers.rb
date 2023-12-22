@@ -18,18 +18,23 @@ end
 
 # worker thread for generating thumbnails
 def start_auto_gen_thumbnail
-	$open_cbz_ltime = Time.now - 61 # holds the last time the open_cbz is called
+	$last_user_interaction_epoch = 0
 
 	Thread.new {
 		puts "************* Start Generating Thumbnails *************" 
 		
+		paused_msg = false
 		for bookcode, obj in $db.books
-			# if the call to open_cbz has elasped more than 60 seconds, allow to resume generating
-			if $open_cbz_ltime + 60 < Time.now
+			# generate thumbnails if web request didnt happen for 60 seconds
+			if Time.now.to_i > $last_user_interaction_epoch + 10
 				mk_thumb( obj.fullpath, true )
+				paused_msg = false
 			else
-				puts "Thumbnail generating paused."
-				sleep 60
+				unless paused_msg
+					paused_msg = true
+					puts "Thumbnail generating paused."
+				end
+				sleep 1
 			end
 		end
 		
