@@ -19,7 +19,6 @@ module Kamishibai
 		# shutdown hook, save database and bookmarks when exiting
 		at_exit do
 			$db.save
-			$db.save_bookmarks
 		end
 
 		# smaller, quicker web server
@@ -46,12 +45,6 @@ module Kamishibai
 			# setup public location
 			set :public_folder, File.expand_path(settings.views + '/../public')
 
-			# setup 2nd public location for vendor libraries
-			# use Rack::TryStatic,
-			# 	:root => File.expand_path(settings.views + '/../public/vendor'),
-			# 	:urls => %w[/], try: ['.html', 'index.html', '/index.html']
-
-
 			# authentication
 			use Rack::Auth::Basic, "Restricted Area" do |username, password|
 				[username, password] == [$settings.username, $settings.password]
@@ -69,6 +62,9 @@ module Kamishibai
 		# setup instance variable
 		before do
 			# global instance var
+
+			# last any request interaction
+			$last_user_interaction_epoch = Time.now.to_i
 		end
 
 		# helper functions
@@ -139,18 +135,9 @@ module Kamishibai
 		end
 
 		get '/api/stats' do
-			jdat = {
-				totalBooks:      $db.books.length,
-				totalPages:      $db.books.collect { |bc, b| b.pages }.reduce( :+ ),
-				pagesRead:       $db.books.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ),
-				booksRead:       $db.books.collect { |bc, b| b.page if b.page }.compact.length,
-				booksUnfinished: $db.books.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
-				readingTime:     -1,
-				recentReadings:  [].join(", "),
-				favAuthors:      [].join(", "),
-				uptime:          -1,
-				totalUptime:     -1,
-			}
+			jdat = $db.get_stats
+			jdat[:uptimeSeconds] = (Time.now - $webserver_start_time).to_i
+
 			json jdat
 		end
 
@@ -199,8 +186,6 @@ module Kamishibai
 
 			# check and add new books, existing books will not be added
 			$db.add_books( [ path ], false)
-			# refresh db, make sure book filepath is valid
-			$db.refresh_bookcodes
 
 
 			html = "<ul id=\"ul-lists\" class=\"ul-lists\">\n"
@@ -238,13 +223,11 @@ module Kamishibai
 				elsif ext == 'cbz' and File.stat(fp).readable_real?
 					# a file
 					
-					bookcode = $db.get_bookcode_byfilename( fp )
-					unless bookcode
+					book = $db.get_book_byfilename( fp )
+					unless book
 						puts "ERROR: bookcode #{bookcode} not found! skipping to next book..."
 						next
 					end
-
-					book = $db.get_book( bookcode )
 
 					lists << book
 				end
@@ -744,6 +727,12 @@ module Kamishibai
 				end
 			end
 
+			# sort by book title if possible
+			if bookcodes.length <= 100
+				pp book
+				book = books.sort { |a,b| a[:title] > b[:title] ? 1 : 0 }
+			end
+
 			JSON.pretty_generate( books )
 		end
 
@@ -839,20 +828,23 @@ module Kamishibai
 		#
 		########################################
 
-		# flush bookmarks from memory to hdd
-		get '/save_bookmarks' do
-			$db.save_bookmarks
-		end
-		
 		# restart webserver
-		get '/restart' do
+		post '/restart' do
+			if params[:confirm] != 'yes'
+				halt 400, 'confirmation needed'
+			end
+
 			$RERUN = true
 			Process.kill("TERM", Process.pid)
 			'<html><head><meta http-equiv="refresh" content="5; url=/"></head><body>restarting...</body></html>'
 		end
 
 		# shutdown kamishibai
-		get '/shutdown' do
+		post '/shutdown' do
+			if params[:confirm] != 'yes'
+				halt 400, 'confirmation needed'
+			end
+			
 			$RERUN = false
 			Process.kill("TERM", Process.pid)
 		end
@@ -867,7 +859,7 @@ module Kamishibai
 
 			unless FileTest.directory?( trash_dir )
 				unless File.stat( File.dirname(fp) ).writable?
-					halt "Error. Directory is read only! #{ File.dirname(fp) }"
+					halt 400, "Error. Directory is read only! #{ File.dirname(fp) }"
 				end
 
 				Dir.mkdir( trash_dir )
@@ -880,9 +872,3 @@ module Kamishibai
 
 	end
 end
-
-
-# load webserver plug-ins
-Dir.glob( settings.root + '/../**/webserver_*.rb' ) { |f|
-	require f.gsub('.rb','')
-}
