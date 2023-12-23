@@ -45,12 +45,6 @@ module Kamishibai
 			# setup public location
 			set :public_folder, File.expand_path(settings.views + '/../public')
 
-			# setup 2nd public location for vendor libraries
-			# use Rack::TryStatic,
-			# 	:root => File.expand_path(settings.views + '/../public/vendor'),
-			# 	:urls => %w[/], try: ['.html', 'index.html', '/index.html']
-
-
 			# authentication
 			use Rack::Auth::Basic, "Restricted Area" do |username, password|
 				[username, password] == [$settings.username, $settings.password]
@@ -846,14 +840,22 @@ module Kamishibai
 		########################################
 
 		# restart webserver
-		get '/restart' do
+		post '/restart' do
+			if params[:confirm] != 'yes'
+				halt 400, 'confirmation needed'
+			end
+
 			$RERUN = true
 			Process.kill("TERM", Process.pid)
 			'<html><head><meta http-equiv="refresh" content="5; url=/"></head><body>restarting...</body></html>'
 		end
 
 		# shutdown kamishibai
-		get '/shutdown' do
+		post '/shutdown' do
+			if params[:confirm] != 'yes'
+				halt 400, 'confirmation needed'
+			end
+			
 			$RERUN = false
 			Process.kill("TERM", Process.pid)
 		end
@@ -868,7 +870,7 @@ module Kamishibai
 
 			unless FileTest.directory?( trash_dir )
 				unless File.stat( File.dirname(fp) ).writable?
-					halt "Error. Directory is read only! #{ File.dirname(fp) }"
+					halt 400, "Error. Directory is read only! #{ File.dirname(fp) }"
 				end
 
 				Dir.mkdir( trash_dir )
