@@ -30,17 +30,20 @@ def start_auto_gen_thumbnail
 
 	return Thread.new {
 		loop do		
-			paused_msg = false
+			paused_msg = true
 			for bookcode in $db.bookcodes
 				book = $db.get_book(bookcode)
 				# generate thumbnails if web request didnt happen for x seconds
 				if Time.now.to_i > $last_user_interaction_epoch + 10
+					if paused_msg
+						paused_msg = false
+						puts "Auto thumbnail generation started..."
+					end
 					mk_thumb( book.fullpath, true )
-					paused_msg = false
 				else
 					unless paused_msg
 						paused_msg = true
-						puts "Thumbnail generating paused."
+						puts "Auto thumbnail generation paused..."
 					end
 					sleep 1
 				end
