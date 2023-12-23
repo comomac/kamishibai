@@ -38,6 +38,7 @@ module Kamishibai
 				bookmarks.keys.each { |bookcode|
 					h = bookmarks[bookcode]
 					o = get_book(bookcode)
+					next unless o
 					o.page  = h['p']
 					o.rtime = h['r']
 				}
