@@ -135,18 +135,9 @@ module Kamishibai
 		end
 
 		get '/api/stats' do
-			jdat = {
-				totalBooks:      $db.books.length,
-				totalPages:      $db.books.collect { |bc, b| b.pages }.reduce( :+ ),
-				pagesRead:       $db.books.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ),
-				booksRead:       $db.books.collect { |bc, b| b.page if b.page }.compact.length,
-				booksUnfinished: $db.books.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
-				readingTime:     -1,
-				recentReadings:  [].join(", "),
-				favAuthors:      [].join(", "),
-				uptime:          -1,
-				totalUptime:     -1,
-			}
+			jdat = $db.get_stats
+			jdat[:uptimeSeconds] = (Time.now - $webserver_start_time).to_i
+
 			json jdat
 		end
 
@@ -232,13 +223,11 @@ module Kamishibai
 				elsif ext == 'cbz' and File.stat(fp).readable_real?
 					# a file
 					
-					bookcode = $db.get_bookcode_byfilename( fp )
-					unless bookcode
+					book = $db.get_book_byfilename( fp )
+					unless book
 						puts "ERROR: bookcode #{bookcode} not found! skipping to next book..."
 						next
 					end
-
-					book = $db.get_book( bookcode )
 
 					lists << book
 				end

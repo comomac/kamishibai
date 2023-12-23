@@ -35,7 +35,8 @@ module Kamishibai
 			# restore bookmark
 			if File.exists?( @bookmarks_savepath )
 				bookmarks = read_bookmarks
-				bookmarks.each { |bookcode, h|
+				bookmarks.keys.each { |bookcode|
+					h = bookmarks[bookcode]
 					o = get_book(bookcode)
 					o.page  = h['p']
 					o.rtime = h['r']
@@ -52,11 +53,6 @@ module Kamishibai
 
 		def get_book(bookcode)
 			@db[ bookcode ]
-		end
-
-		def get_bookcode_byfilename(filename)
-			filename = File.basename( filename )
-			@files[ filename ]
 		end
 
 		def get_book_byfilename(filename)
@@ -79,10 +75,20 @@ module Kamishibai
 			get_book( bookcode ).page
 		end
 
-		def books
-			@db
+		# basic db stats
+		def get_stats
+			# WARNING, might cause issue because iteration (.collect/.each) may break during @db modification
+			# e.g.  <error> can't add a new key into hash during iteration (RuntimeError)
+			return {
+				totalBooks:      @db.length,
+				totalPages:      @db.collect { |bc, b| b.pages }.reduce( :+ ).to_i,
+				pagesRead:       @db.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ).to_i,
+				booksRead:       @db.collect { |bc, b| b.page if b.page }.compact.length,
+				booksUnfinished: @db.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
+				recentReadings:  [].join(", "),
+				favAuthors:      [].join(", "),
+			}
 		end
-
 		
 		# big codes
 
@@ -103,8 +109,7 @@ module Kamishibai
 				Dir.glob(File.expand_path(src).escape_glob + search).delete_if { |f|
 					restricted_dir?(f)
 				}.each { |f|
-					bc = get_bookcode_byfilename( f )
-					o  = get_book( bc )
+					o = get_book_byfilename( f )
 					fs = File.stat(f)
 					o2 = get_book( @inodes[ fs.ino ] )
 
@@ -198,7 +203,8 @@ module Kamishibai
 			
 			# save db (big file)
 			db = {}
-			@db.each { |bookcode, book|
+			@db.keys.each { |bookcode|
+				book = @db[bookcode]
 				next unless book.pages # skip invalid book that contain no page/images
 
 				db[ bookcode ] = {
