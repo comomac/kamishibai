@@ -15,7 +15,7 @@ end
 
 # worker thread for saving database and bookmarks
 def start_auto_save
-	# run save every 60 seconds
+	# save db every x seconds
 	return Thread.new {
 		while true
 			$db.save
@@ -29,14 +29,13 @@ def start_auto_gen_thumbnail
 	$last_user_interaction_epoch = 0
 
 	return Thread.new {
-		loop do
-			# puts "************* Start Generating Thumbnails *************" 
-			
+		loop do		
 			paused_msg = false
-			for bookcode, obj in $db.books
-				# generate thumbnails if web request didnt happen for 60 seconds
+			for bookcode in $db.bookcodes
+				book = $db.get_book(bookcode)
+				# generate thumbnails if web request didnt happen for x seconds
 				if Time.now.to_i > $last_user_interaction_epoch + 10
-					mk_thumb( obj.fullpath, true )
+					mk_thumb( book.fullpath, true )
 					paused_msg = false
 				else
 					unless paused_msg
@@ -46,15 +45,22 @@ def start_auto_gen_thumbnail
 					sleep 1
 				end
 			end
-			
-			# puts "************* Finish Generating Thumbnails *************"
-			sleep 6
+			# slow, overall regen thumb from beginning of db
+			# wait longer the larger the db
+			wait_time_seconds = ($db.bookcodes / 100) * 11
+			if wait_time_seconds > 3600
+				# max 1 hr
+				wait_time_seconds = 3600
+			end
+			sleep wait_time_seconds
 		end
 	}
 end
 
 # worker thread for webserver
 def start_web_server
+	$webserver_start_time = Time.now
+
 	return Thread.new {
 		Kamishibai::Webserver.run!
 	}
