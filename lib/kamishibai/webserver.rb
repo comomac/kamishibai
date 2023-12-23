@@ -201,8 +201,6 @@ module Kamishibai
 
 			# check and add new books, existing books will not be added
 			$db.add_books( [ path ], false)
-			# refresh db, make sure book filepath is valid
-			$db.refresh_bookcodes
 
 
 			html = "<ul id=\"ul-lists\" class=\"ul-lists\">\n"
@@ -883,9 +881,3 @@ module Kamishibai
 
 	end
 end
-
-
-# load webserver plug-ins
-Dir.glob( settings.root + '/../**/webserver_*.rb' ) { |f|
-	require f.gsub('.rb','')
-}

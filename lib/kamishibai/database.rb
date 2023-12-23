@@ -83,22 +83,7 @@ module Kamishibai
 			@db
 		end
 
-		# refresh @bookcodes, making sure all the books have valid path
-		def refresh_bookcodes
-			bookcodes = []
-			for bookcode, book in @db
-				if File.exists?( book.fullpath )
-					book.exists = true
-					bookcodes << bookcode
-				else
-					book.exists = false
-				end
-			end
-
-			@bookcodes = bookcodes
-		end
 		
-
 		# big codes
 
 		# add book from directories, if existing booka are found, modify instead
