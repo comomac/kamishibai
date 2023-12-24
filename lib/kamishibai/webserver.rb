@@ -397,13 +397,16 @@ module Kamishibai
 			# sleep 1.5 * $imgNum
 			# $imgNum -= 1
 
-			if width > 0 and height > 0 and $settings.image_resize
-				# resize image
-				img_resize( image, width, height, { :quality => quality })
-			else
-				# give raw
-				image
+			# recompress/resize if needed
+			max_file_size = 1024*1024*1.2 # 1.2mb
+			max_width  = 1080
+			max_height = 1920
+			img = re_image(image, quality, max_width, max_height, max_file_size)
+			if img == nil
+				halt 500, 'image is nil'
 			end
+
+			img
 		end
 
 		########################################
