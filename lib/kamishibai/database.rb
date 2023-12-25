@@ -12,7 +12,7 @@ require 'pathname'
 
 module Kamishibai
 	class Database
-		attr_reader :files, :bookcodes
+		attr_reader :files, :bookcodes, :books
 
 		def initialize( db_filepath, bookmarks_filepath )
 			@db_savepath = db_filepath
@@ -22,7 +22,7 @@ module Kamishibai
 				load_database
 			else
 				# create fresh database
-				@db = {}
+				@books = {}
 				# indexes
 				@bookcodes = []
 				@files = {}
@@ -38,6 +38,7 @@ module Kamishibai
 				bookmarks.keys.each { |bookcode|
 					h = bookmarks[bookcode]
 					o = get_book(bookcode)
+					next unless o
 					o.page  = h['p']
 					o.rtime = h['r']
 				}
@@ -52,7 +53,7 @@ module Kamishibai
 		end
 
 		def get_book(bookcode)
-			@db[ bookcode ]
+			@books[ bookcode ]
 		end
 
 		def get_book_byfilename(filename)
@@ -80,11 +81,11 @@ module Kamishibai
 			# WARNING, might cause issue because iteration (.collect/.each) may break during @db modification
 			# e.g.  <error> can't add a new key into hash during iteration (RuntimeError)
 			return {
-				totalBooks:      @db.length,
-				totalPages:      @db.collect { |bc, b| b.pages }.reduce( :+ ).to_i,
-				pagesRead:       @db.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ).to_i,
-				booksRead:       @db.collect { |bc, b| b.page if b.page }.compact.length,
-				booksUnfinished: @db.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
+				totalBooks:      @books.length,
+				totalPages:      @books.collect { |bc, b| b.pages }.reduce( :+ ).to_i,
+				pagesRead:       @books.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ).to_i,
+				booksRead:       @books.collect { |bc, b| b.page if b.page }.compact.length,
+				booksUnfinished: @books.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
 				recentReadings:  [].join(", "),
 				favAuthors:      [].join(", "),
 			}
@@ -167,7 +168,7 @@ module Kamishibai
 						)
 
 						# update indexes
-						@db[ o.bookcode ] = o
+						@books[ o.bookcode ] = o
 						@bookcodes << o.bookcode
 						@files[ File.basename(f) ] = o.bookcode
 						@inodes[ o.inode ] = o.bookcode
@@ -203,8 +204,8 @@ module Kamishibai
 			
 			# save db (big file)
 			db = {}
-			@db.keys.each { |bookcode|
-				book = @db[bookcode]
+			@books.keys.each { |bookcode|
+				book = @books[bookcode]
 				next unless book.pages # skip invalid book that contain no page/images
 
 				db[ bookcode ] = {
@@ -285,7 +286,7 @@ module Kamishibai
 
 		# load database
 		def load_database
-			@db = {}
+			@books = {}
 			
 			# indexes for db, help to speed up database search
 			@files = {} # hash of files linked to bookcodes, format: files[basename] = bookcode
@@ -309,15 +310,15 @@ module Kamishibai
 					:pages    => h['pages'],
 				)
 
-				@db[ o.bookcode ] = o
+				@books[ o.bookcode ] = o
 				# update indexes
 				@files[ File.basename( o.fullpath ).delete('ÿ') ] = o.bookcode # utf8-mac puts ÿ in filename, need to remove first for cross os support
 				@bookcodes << o.bookcode
 				@inodes[ o.inode ] = o.bookcode
 			}
-			puts "load db done. #{@db.length} books #{Time.now}"
+			puts "load db done. #{@books.length} books #{Time.now}"
 			
-			# db format:   @db[ bookcode ] = Book obj
+			# books format:   @books[ bookcode ] = Book obj
 			# + indexes    @files = { basename_a => bookcode_a, basename_b => bookcode_b, ... }
 			#              @bookcodes = [ bookcode_a, bookcode_b, ... ]
 			#              @inodes = { inode_a => bookcode_a, inode_b => bookcode_b, ... }

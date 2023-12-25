@@ -89,21 +89,15 @@ end
 
 # return image type
 def image_type(magic)
-	magic = magic[0..9]
-	case magic
-		when /^\xff\xd8/n
-			:jpeg
-		when /^\x89PNG/n
-			:png
-		when /^GIF8/n
-			:gif
-		when /^\x00/n
-			:wbmp
-		when /^gd2/n
-			:gd2
-		else
-			:unknown
-	end
+	return :unknown if magic.length < 10
+	# fix because diff encoding with same data will also throws off the == match
+	magic = magic[0..9].clone.force_encoding('UTF-8')
+
+	return :jpeg if magic[0..1] == "\xff\xd8"
+	return :png  if magic[0..3] == "\x89PNG"
+	return :gif  if magic[0..3] == "GIF8"
+	return :gd2  if magic[0..2] == "gd2"
+	return :unknown
 end
 # /class
 
@@ -193,20 +187,39 @@ def open_cbz( zfile, page = 1, options = {} )
 
 			img_bin = x.file.read(img_name)
 
-			begin
-				# load the image to check if the image is corrupted or not
-				GD2::Image.load( img_bin ) if defined?(GD2)
-			rescue => errmsg
-				puts "error: fail to load image #{page} : #{img_uname} : #{zfile}\n#{errmsg}"
-				return nil
-			end
-
 			return img_bin
 		}
 	rescue => e
 		puts "Error: Failed to open zip file.\nException: #{e.exception}\nTrace: #{e.backtrace.join("\n\t")}"
 		return nil
 	end
+end
+
+# resize if too big (size or dimension)
+def re_image( image, quality, max_width, max_height, max_file_size )
+	options = {
+		quality: quality
+	}
+
+	to_resize = false
+
+	if defined?(ImageVoodoo)
+		ImageVoodoo.with_bytes( image ) { |jim|
+			to_resize = true if image.length > max_file_size
+			to_resize = true if jim.width > max_width or jim.height > max_height
+		}
+	else
+		gim = GD2::Image.load( image )
+		to_resize = true if image.length > max_file_size
+		to_resize = true if gim.width > max_width or gim.height > max_height
+		# small optimization to prevent doing double GD2::Image.load()
+		options[:gd2] = gim if to_resize
+	end
+	
+	# no resize
+	return image unless to_resize
+	# yes resize
+	return img_resize(image, max_width, max_height, options)
 end
 
 if defined?(ImageVoodoo)
@@ -237,7 +250,13 @@ else
 		format = options[:format]
 
 		begin
-			img = GD2::Image.load(dat)
+			img = nil
+			# if gd2 already provided, no need to load again
+			if options[:gd2]
+				img = options[:gd2]
+			else
+				img = GD2::Image.load(dat)
+			end
 
 			# get image resolution
 			res = img.size
@@ -299,8 +318,7 @@ else
 			end
 
 		rescue => errmsg
-			puts "error: resize failed. #{w} #{h} #{quality}"
-			p errmsg
+			puts "error: resize failed. #{w} #{h} #{quality}\n#{errmsg}"
 			return nil
 		end
 	end

@@ -196,15 +196,20 @@ module Kamishibai
 			keywords = search_words(request['keyword'])
 
 			# poulate the lists with files(books) and directory
-			lists = []
+			lists = [
+				# [ File::Stat, Book ],
+				# [ File::Stat, dir(string) ],
+			]
 			Dir.glob(path.escape_glob + '/*').entries.sort.each { |fp|
-				next unless File.stat(fp).readable_real?
+				fs = File.stat(fp)
+				# skip unreadable file/dir (permission)
+				next unless fs.readable_real?
 
-				dir = File.dirname(fp)
-				f =   File.basename(fp)
-				ext = File.extname(fp)[1..-1]
-
+				# dir = File.dirname(fp)
+				# ext = File.extname(fp)[1..-1]
+				
 				# search for all keywords
+				f =   File.basename(fp)
 				found = 0
 				for kw in keywords
 					if f.downcase.include?(kw)
@@ -215,12 +220,12 @@ module Kamishibai
 					end
 				end
 				next if found < keywords.length
-				
-				if FileTest.directory?(fp) and File.stat(fp).executable_real?
+			
+				if fs.directory? and fs.executable_real?
 					# a directory
-					lists << fp
+					lists << [fs, fp]
 
-				elsif ext == 'cbz' and File.stat(fp).readable_real?
+				elsif File.extname(fp) == '.cbz' and fs.readable_real?
 					# a file
 					
 					book = $db.get_book_byfilename( fp )
@@ -229,58 +234,39 @@ module Kamishibai
 						next
 					end
 
-					lists << book
+					lists << [fs, book]
 				end
 			}
 
-			# sort by order
-			lists2 = {}
-			case order_by
-				when 'size'
-					lists.each { |x|
-
-						if x.class == Book
-							lists2[x] = x.size
-						else
-							# x == full path of file or directory
-							lists2[x] = 0
-						end
-					}
-
-					lists2 = lists2.sort { |a, b|	b[1] <=> a[1] }
-
-				when 'date'
-					lists.each { |x|
-						if x.class == Book
-							lists2[x] = x.mtime
-						else
-							# x == full path of file or directory
-							lists2[x] = File.stat(x).mtime.to_i
-						end
-					}
-					lists2 = lists2.sort { |a, b| b[1] <=> a[1] }
-
-				else
-					# by name, default
-					lists.each { |x|
-						if x.class == Book
-							lists2[x] = File.basename( x.fullpath )
-						else
-							# x == full path of file or directory
-							lists2[x] = File.basename( x )
-						end
-					}
-					lists2 = lists2.sort { |a, b| a[1] <=> b[1] }
+			# sort order
+			if order_by == 'size'
+				# by file size (big to small)
+				lists.sort! { |b,a|
+					a[0].size <=> b[0].size
+				}
+			elsif order_by == 'date'
+				# by create date (latest to oldest)
+				lists.sort! { |b,a|
+					a[0].ctime <=> b[0].ctime
+				}
+			else
+				# by file name (a to z)
+				lists.sort! { |a,b|
+					fa = a[1].class == Book ? File.basename(a[1].fullpath) : a[1]
+					fb = b[1].class == Book ? File.basename(b[1].fullpath) : b[1]
+					fa<=>fb
+				}
 			end
 
-			# create html from lists(2)
-			lists2.each { |item, dat|
+			# create html from lists
+			lists.each { |fs, item|
 
 				if item.class == String
 					# a directory
 
 					li_classes = ['directory', 'collapsed']
 
+					icon = 'folder-mini.png'
 					if item == 'Trash'
 						el_id = 'id="trash"'
 						li_classes << 'trash'
@@ -289,22 +275,19 @@ module Kamishibai
 						else
 							icon = 'trash-empty-mini.png'
 						end
-					else
-						icon = 'folder-mini.png'
 					end
 
-					html << "\t<li class=\"" + li_classes.join(' ') + "\" #{el_id}><a href=\"#dir=#{item}\" rel=\"#{item}/\"><img src=\"/images/" + icon + "\" /><span>#{File.basename(item)}</span></a></li>\n"
+					html << %Q[\t<li class="#{li_classes.join(' ')}" #{el_id}><a href="#dir=#{item}" rel="#{item}/"><img src="/images/#{icon}" /><span>#{File.basename(item)}</span></a></li>\n]
 
 				elsif item.class == Book
-					# a file
+					# a book (file)
 
 					book = item
 					bookcode = book.bookcode
-					fp = book.fullpath
-					f = File.basename(fp)
-					ext = File.extname(fp)[1..-1]
 
-					img = "<img class='lazy fadeIn fadeIn-1s fadeIn-Delay-Xs' data-original='/api/book/thumb/#{bookcode}' alt='Loading...' />"
+					img = %Q[<img class="lazy fadeIn fadeIn-1s fadeIn-Delay-Xs" data-original="/api/book/thumb/#{bookcode}" alt="Loading..." />]
+					href = '/tablet.html#book=' + bookcode
+					readstate = 'read'
 
 					if book.page
 						# prepare the value for the visual read progress
@@ -316,18 +299,17 @@ module Kamishibai
 
 						# read percentage css class
 						if pc > 0
-							readstate = 'read' + pc.to_i.to_s
+							readstate += pc.to_i.to_s
 						else
-							readstate = 'read5'
+							readstate += '5'
 						end
 
-						href = '/tablet.html#book=' + bookcode + '&page=' + page.to_s
+						href += '&page=' + page.to_s
 					else
-						readstate = 'read0'
-						href = '/tablet.html#book=' + bookcode
+						readstate += '0'
 					end
 
-					html << "\t<li class=\"file ext_#{ext}\"><a href=\"#{href}\" bookcode=\"#{bookcode}\" rel=\"#{fp}\">#{img}<span class=\"#{readstate}\">#{f.escape_html}</span><span class=\"badge badge-info bookpages\">#{book.pages}</span></a></li>\n"
+					html << %Q[\t<li class="file ext_cbz"><a href="#{href}" bookcode="#{bookcode}" rel="#{book.fullpath}">#{img}<span class="#{readstate}">#{File.basename(book.fullpath).escape_html}</span><span class="badge badge-info bookpages">#{book.pages}</span></a></li>\n]
 				end
 			}
 
@@ -415,13 +397,16 @@ module Kamishibai
 			# sleep 1.5 * $imgNum
 			# $imgNum -= 1
 
-			if width > 0 and height > 0 and $settings.image_resize
-				# resize image
-				img_resize( image, width, height, { :quality => quality })
-			else
-				# give raw
-				image
+			# recompress/resize if needed
+			max_file_size = 1024*1024*1.2 # 1.2mb
+			max_width  = 1080
+			max_height = 1920
+			img = re_image(image, quality, max_width, max_height, max_file_size)
+			if img == nil
+				halt 500, 'image is nil'
 			end
+
+			img
 		end
 
 		########################################
