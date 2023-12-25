@@ -304,7 +304,7 @@ module Kamishibai
 						readstate += '0'
 					end
 
-					html << %Q[\t<li class="file ext_cbz"><a href="#{href}" bookcode="#{bookcode}" rel="#{book.fullpath}">#{img}<span class="#{readstate}">#{File.basename(book.fullpath).escape_html}</span><span class="badge badge-info bookpages">#{book.pages}</span></a></li>\n]
+					html << %Q[\t<li class="file ext_cbz"><a href="#{href}&dir=#{path}" bookcode="#{bookcode}" rel="#{book.fullpath}">#{img}<span class="#{readstate}">#{File.basename(book.fullpath).escape_html}</span><span class="badge badge-info bookpages">#{book.pages}</span></a></li>\n]
 				end
 			}
 

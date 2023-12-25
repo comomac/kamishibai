@@ -25,9 +25,17 @@ function getHashParams(singleParam) {
     return hashParams;
 }
 
-// return fully formatted hash
-function fullhash(page) {
-	return "book=" + getHashParams("book") + "&page=" + page;
+// re-set fully formatted hash, replace history
+function replace_full_hash(bookcode, page) {
+    var hashes = ["book=" + bookcode + "&page=" + page];
+
+    for (var k in getHashParams()) {
+        if (k == "book") continue;
+        if (k == "page") continue;
+
+        hashes.push(k + "=" + getHashParams(k));
+    }
+	window.location.hash.replace("#" + hashes.join("&"));
 }
 
 // a queue that will make the browser run more responsively

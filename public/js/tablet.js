@@ -280,9 +280,8 @@ function readBook(bookcode, bookpage) {
 		$('#pageslider').attr('max', book.pages);
 		$('#pageslider').val(book.lastpage);
 
-		// set location hash if not set or diff
-		var hstr = '#book=' + book.bookcode + '&page=' + book.lastpage;
-		if (window.location.hash !== hstr) window.location.hash = hstr;
+		// set location hash to expect pattern
+		replace_full_hash(book.bookcode, book.lastpage);
 
 		// create gallery
 		createGallery(bookpage);
@@ -477,7 +476,7 @@ function createGallery(goPage) {
 		document.title = "(" + pg + "/" + book.pages + ")";
 
 		// set the page hash, make sure no new page history
-		window.location.replace('#book=' + book.bookcode + '&page=' + pg);
+		replace_full_hash(book.bookcode, pg);
 
 		// set bookmark only if stopped at page
 		if (window.timerOnFlipSlide.bookmark) {
@@ -568,6 +567,13 @@ function setBookmark(bookcode, page) {
 
 
 function closeReader() {
+	// return to browse if from there
+	var dir = getHashParams("dir")
+	if (dir && dir.length > 0) {
+		window.location = "/browse.html?dir=" + dir;
+		return
+	}
+
 	$('#container').addClass('hidden');
 
 	$('#menu').removeClass("hidden");
@@ -895,7 +901,7 @@ function onload() {
 			}
 
 			// replace the history
-			window.location.replace( '#' + fullhash( topage ) );
+			replace_full_hash(getHashParams('book'), topage);
 		}
 
 		// anything else, if in/out of tablet page, reload the page
