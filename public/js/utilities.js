@@ -35,7 +35,7 @@ function replace_full_hash(bookcode, page) {
 
         hashes.push(k + "=" + getHashParams(k));
     }
-	window.location.hash.replace("#" + hashes.join("&"));
+	window.location.replace("#" + hashes.join("&"));
 }
 
 // a queue that will make the browser run more responsively

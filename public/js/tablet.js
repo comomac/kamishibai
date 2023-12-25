@@ -285,9 +285,6 @@ function readBook(bookcode, bookpage) {
 
 		// create gallery
 		createGallery(bookpage);
-
-		// force trigger hashchange to load correct page
-		// window.dispatchEvent(new HashChangeEvent('hashchange'));
 	});
 }
 
@@ -475,7 +472,7 @@ function createGallery(goPage) {
 		// change title according to page
 		document.title = "(" + pg + "/" + book.pages + ")";
 
-		// set the page hash, make sure no new page history
+		// update the page hash, erase history
 		replace_full_hash(book.bookcode, pg);
 
 		// set bookmark only if stopped at page
@@ -863,8 +860,6 @@ function onload() {
 	$('#readdirection').change(function(e) {
 		destroyGallery();
 		createGallery();
-		// force trigger hashchange on load
-		window.dispatchEvent(new HashChangeEvent('hashchange'));
 	});
 
 	updateReaderFooter();
@@ -876,40 +871,6 @@ function onload() {
 	if (fullScreenAvailable) {
 		$('#full-screen-btn').removeClass('hidden');
 	}
-
-	// hash change
-	$(window).bind('hashchange', function(e) {
-		var ev = e.originalEvent;
-		var fromTablet = false;
-		var toTablet = false;
-		if (ev.oldURL.indexOf('book=') > -1) {
-			fromTablet = true;
-		}
-		if (ev.newURL.indexOf('book=') > -1) {
-			toTablet = true;
-		}
-
-		// is in reader mode
-		if (typeof getHashParams('book') !== 'undefined') {
-			var topage = getpage();
-
-			if (topage < 1) {
-				topage = 1;
-			}
-			else if (book && topage > book.pages) {
-				topage = book.pages;
-			}
-
-			// replace the history
-			replace_full_hash(getHashParams('book'), topage);
-		}
-
-		// anything else, if in/out of tablet page, reload the page
-		if ((fromTablet ^ toTablet) === 1) {
-			window.location.reload();
-		}
-	});
-
 }
 
 var myScroll;
