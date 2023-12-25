@@ -2,11 +2,9 @@
 
 # License: refer to LICENSE file
 
-require 'pp' if $debug
 require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/json'
-#require 'rack/contrib/try_static'
 require 'rbconfig'
 
 #
@@ -188,9 +186,9 @@ module Kamishibai
 			$db.add_books( [ path ], false)
 
 
-			html = "<ul id=\"ul-lists\" class=\"ul-lists\">\n"
+			html = %Q["<ul id="ul-lists" class="ul-lists">\n"]
 
-			html << "\t<li class=\"directory collapsed updir\"><a href=\"#dir=#{File.dirname(path)}\" rel=\"#{File.dirname(path)}/\"><img src=\"/images/folder-mini-up.png\" /><span>..</span></a></li>\n"
+			html << %Q["\t<li class="directory collapsed updir"><a href="#dir=#{File.dirname(path)}" rel="#{File.dirname(path)}/"><img src="/images/folder-mini-up.png" /><span>..</span></a></li>\n"]
 
 
 			keywords = search_words(request['keyword'])
@@ -321,7 +319,7 @@ module Kamishibai
 			content_type :text
 			path = request['dir'].untaint
 
-			html = "<ul class=\"jqueryFileTree\" style=\"display: none;\">\n"
+			html = %Q[<ul class="jqueryFileTree" style="display: none;">\n]
 
 			if FileTest.exists?(File.expand_path(path))
 
@@ -330,11 +328,13 @@ module Kamishibai
 
 				#loop through all directories
 				Dir.glob("*") { |x|
-					next unless File.directory?(x.untaint)
-					next unless File.stat(x.untaint).readable_real? and File.stat(x.untaint).executable_real?
+					fs = File.stat(x.untaint)
+					next unless fs.directory?
+					next unless fs.readable_real?
+					next unless fs.executable_real?
 
 					fp = path + x
-					html << "\t<li class=\"directory collapsed\"><a href=\"#\" rel=\"#{fp}/\" onclick=\"selected_dir('#{fp}');\">#{x.escape_html}</a></li>\n";
+					html << %Q[\t<li class="directory collapsed"><a href="#" rel="#{fp}/" onclick="selected_dir('#{fp}');">#{x.escape_html}</a></li>\n]
 				}
 
 			end
@@ -386,16 +386,6 @@ module Kamishibai
 			# set content type, png/jpeg/png/gif/etc
 			itype = image_type( image )
 			content_type itype
-
-			# # fake delay
-			# Thread.new {
-			# 	sleep 7
-			# 	$imgNum = 0
-			# 	sleep 7
-			# 	$imgNum = 0
-			# }
-			# sleep 1.5 * $imgNum
-			# $imgNum -= 1
 
 			# recompress/resize if needed
 			max_file_size = 1024*1024*1.2 # 1.2mb
@@ -714,7 +704,6 @@ module Kamishibai
 
 			# sort by book title if possible
 			if bookcodes.length <= 100
-				pp book
 				book = books.sort { |a,b| a[:title] > b[:title] ? 1 : 0 }
 			end
 

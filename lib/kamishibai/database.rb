@@ -270,7 +270,6 @@ module Kamishibai
 				end
 			}
 			srcs.compact!
-			p srcs if $debug
 			
 			srcs
 		end

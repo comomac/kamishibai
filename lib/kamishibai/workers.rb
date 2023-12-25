@@ -6,10 +6,14 @@ require 'thread'
 
 def start_add_books
 	return Thread.new {
-		puts 'adding books... this may take some time to run on first time...'
+		while true
+			puts 'adding books... this may take some time to run on first time...'
 
-		# add new files to db
-		$db.add_books( $settings.srcs )
+			# add new files to db
+			$db.add_books( $settings.srcs )
+
+			sleep 3600*12 # rescan every 12 hours
+		end
 	}
 end
 
@@ -29,7 +33,7 @@ def start_auto_gen_thumbnail
 	$last_user_interaction_epoch = 0
 
 	return Thread.new {
-		loop do		
+		while true	
 			paused_msg = true
 			for bookcode in $db.bookcodes
 				book = $db.get_book(bookcode)
