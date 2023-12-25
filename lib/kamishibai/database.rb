@@ -152,8 +152,6 @@ module Kamishibai
 							next
 						end
 
-						fs = File.stat( f )
-
 						# create new book object for db
 						o = Kamishibai::Book.new(
 							:bookcode => gen_bookcode,

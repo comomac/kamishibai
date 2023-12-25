@@ -186,9 +186,9 @@ module Kamishibai
 			$db.add_books( [ path ], false)
 
 
-			html = %Q["<ul id="ul-lists" class="ul-lists">\n"]
+			html = %Q[<ul id="ul-lists" class="ul-lists">\n]
 
-			html << %Q["\t<li class="directory collapsed updir"><a href="#dir=#{File.dirname(path)}" rel="#{File.dirname(path)}/"><img src="/images/folder-mini-up.png" /><span>..</span></a></li>\n"]
+			html << %Q[\t<li class="directory collapsed updir"><a href="#dir=#{File.dirname(path)}" rel="#{File.dirname(path)}/"><img src="/images/folder-mini-up.png" /><span>..</span></a></li>\n]
 
 
 			keywords = search_words(request['keyword'])
@@ -203,9 +203,6 @@ module Kamishibai
 				# skip unreadable file/dir (permission)
 				next unless fs.readable_real?
 
-				# dir = File.dirname(fp)
-				# ext = File.extname(fp)[1..-1]
-				
 				# search for all keywords
 				f =   File.basename(fp)
 				found = 0
