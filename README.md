@@ -16,7 +16,7 @@ Zipped (CBZ) books are supported, please read file format below.
 
 Has username and password authentication to protect login.
 
-I didn't touch the code for years, had a quick touchup to make sure it works. Found lots of old/bad code, but that was written in 2013, so please don't judge too harshly. Some day I will code and make it better when I have time.
+Primary focus on older hardware such as old tablet and PC.
 
 Screenshots:
 --------------------------  
