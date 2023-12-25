@@ -403,8 +403,6 @@ function createGallery(goPage) {
 		};
 		gallery.masterPages[i].appendChild(el);
 	}
-	// stagger loading image to reduce load
-	staggerImages(goPage);
 
 	gallery.onFlip(function () {
 		console.log('flip event!');
@@ -426,28 +424,22 @@ function createGallery(goPage) {
 				el = gallery.masterPages[i].querySelector('img');
 				el.className = 'loading';
 
-				// called by staggerImages
-				if (window.stopOnFlipImg) {
-					el.removeAttribute('src');
-				}
 				// normal flip
-				else {
-					// if (window.timerOnFlipSlide[i]) {
-					// 	console.log('stop load image!', i)
-					// 	clearTimeout(window.timerOnFlipSlide[i]);
-					// 	window.timerOnFlipSlide[i] = false;
-					// }
+				// if (window.timerOnFlipSlide[i]) {
+				// 	console.log('stop load image!', i)
+				// 	clearTimeout(window.timerOnFlipSlide[i]);
+				// 	window.timerOnFlipSlide[i] = false;
+				// }
 
-					// window.timerOnFlipSlide[i] = setTimeout(function() {
-					// 	console.log('load image!', this.src)
-					// 	this.el.src = this.src;
-					// }.bind({
-					// 	el: el,
-					// 	src: slides[upcoming].img
-					// }), onFlipActionDelay);
+				// window.timerOnFlipSlide[i] = setTimeout(function() {
+				// 	console.log('load image!', this.src)
+				// 	this.el.src = this.src;
+				// }.bind({
+				// 	el: el,
+				// 	src: slides[upcoming].img
+				// }), onFlipActionDelay);
 
-					el.src = slides[upcoming].img;
-				}
+				el.src = slides[upcoming].img;
 			}
 			// else {
 			// 	if (window.timerOnFlipSlide[i]) {
@@ -457,8 +449,6 @@ function createGallery(goPage) {
 			// 	}
 			// }
 		}
-		// reset
-		window.stopOnFlipImg = false;
 
 		// get current page
 		var pg = gallery.pageIndex;
@@ -604,11 +594,13 @@ function goToPage(page) {
 	else {
 		gallery.goToPage(page - 1);
 	}
-
-	staggerImages(page);
 }
 
+// TODO may delete
 function staggerImages(page) {
+	page = Number(page);
+	console.log("stagger from", page)
+
 	var i;
 	if (isEasternBook()) {
 		i = book.pages - page;
@@ -618,7 +610,6 @@ function staggerImages(page) {
 	}
 
 	// global
-	window.stopOnFlipImg = true;
 	window.imageQueue = [
 		// current page
 		{
@@ -640,7 +631,7 @@ function staggerImages(page) {
 	// do first image
 	loadImage();
 }
-
+// TODO may delete
 function loadImage() {
 	var dat = window.imageQueue.shift();
 	
