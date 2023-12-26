@@ -668,7 +668,7 @@ module Kamishibai
 			bookcodes = request['bookcodes'] ? request['bookcodes'].split(',') : []
 			options   = request['options']   ? request['options'].split(',') : []
 
-			books = {}
+			books = []
 
 			for bookcode in bookcodes
 				if $db.has_bookcode?( bookcode )
@@ -685,7 +685,8 @@ module Kamishibai
 					bn = bn.gsub( / +/, ' ' )
 					bn.strip!
 
-					books[bookcode] = {
+					books << {
+						:bookcode => bookcode,
 						:title  => book.title,
 						:sname  => bn,
 						:author => book.author,
@@ -701,10 +702,20 @@ module Kamishibai
 
 			# sort by book title if possible
 			if bookcodes.length <= 100
-				book = books.sort { |a,b| a[:title] > b[:title] ? 1 : 0 }
+				# by title and volume/chapter
+				books.sort! { |a,b|
+					aa = (%Q[#{a[:title]} #{a[:sname]}]).naturalized.to_s
+					bb = (%Q[#{b[:title]} #{b[:sname]}]).naturalized.to_s
+					aa > bb ? 1 : 0
+				}
 			end
 
-			JSON.pretty_generate( books )
+			books2 = {}
+			books.each { |book|
+				books2[book[:bookcode]] = book
+			}
+
+			JSON.pretty_generate( books2 )
 		end
 
 		########################################
