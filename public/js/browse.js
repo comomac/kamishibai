@@ -95,11 +95,9 @@ function reload_dir_lists(dir_path, keyword) {
 	// set the last path selected on cookie
 	$.cookie(uport() + '.lastpath', dir_path, { path: '/' });
 
-	var el = $('#dir_lists');
-	el.empty();
-
 	$.get('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
-		el.append(data);
+		var el = $('#dir_lists');
+		el.replaceWith(data);
 
 		// make li evenly horizontally filled
 		var window_width = $(window).innerWidth();
@@ -107,16 +105,6 @@ function reload_dir_lists(dir_path, keyword) {
 		var num = parseInt(window_width / li_width);
 		num = parseInt(window_width / num);
 		$('.directory, .file').css('width', num +'px');
-
-		// replace all links to desktop reader
-		if (!hasTouch) {
-			for (var i in el.find('LI A')) {
-				var el_a = el.find('LI A').eq(i);
-				if (el_a.parent().hasClass('file')) {
-					el_a.attr('href', el_a.attr('href').replace(/reader2/,'reader') );
-				}
-			}
-		}
 
 		// make images load only when scrolled into view
 		$("img.lazy").lazyload({
