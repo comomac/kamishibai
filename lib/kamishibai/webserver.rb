@@ -161,25 +161,23 @@ module Kamishibai
 		end
 
 		# directory browse page
-		post '/api/dir_list' do
+		get '/api/dir_list' do
 			content_type :text
-			path = File.expand_path( request['dir'].untaint )
-			order_by = request['order_by'].untaint
+
+			dir = request['dir'] || ""
+			unless dir.length > 0
+				halt 400, "Error. dir not provided"
+			end
+			path = File.expand_path( dir )
+
+			order_by = request['order_by'] || ""
 
 			unless FileTest.exists?(path)
-				errmsg = "Error. No such path. #{path}"
-				puts errmsg if $debug
-				# not_found errmsg
-
-				return errmsg
+				halt 400, "Error. No such dir. #{path}"
 			end
 
 			unless File.stat(path).readable_real?
-				errmsg = "Error. Not readable path. #{path}"
-				puts errmsg if $debug
-				# not_found errmsg
-
-				return errmsg
+				halt 400, "Error. Not readable dir. #{path}"
 			end
 
 			# check and add new books, existing books will not be added
@@ -190,8 +188,8 @@ module Kamishibai
 
 			html << %Q[\t<li class="directory collapsed updir"><a href="#dir=#{File.dirname(path)}" rel="#{File.dirname(path)}/"><img src="/images/folder-mini-up.png" /><span>..</span></a></li>\n]
 
-
-			keywords = search_words(request['keyword'])
+			keyword = request['keyword'] || ""
+			keywords = search_words(keyword)
 
 			# poulate the lists with files(books) and directory
 			lists = [
@@ -307,6 +305,8 @@ module Kamishibai
 					html << %Q[\t<li class="file ext_cbz"><a href="#{href}&dir=#{path}" bookcode="#{bookcode}" rel="#{book.fullpath}">#{img}<span class="#{readstate}">#{File.basename(book.fullpath).escape_html}</span><span class="badge badge-info bookpages">#{book.pages}</span></a></li>\n]
 				end
 			}
+
+			html << "</ul>\n"
 
 			return html
 		end

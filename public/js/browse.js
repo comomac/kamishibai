@@ -98,7 +98,7 @@ function reload_dir_lists(dir_path, keyword) {
 	var el = $('#dir_lists');
 	el.empty();
 
-	$.post('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
+	$.get('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
 		el.append(data);
 
 		// make li evenly horizontally filled
