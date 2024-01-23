@@ -180,10 +180,6 @@ module Kamishibai
 				halt 400, "Error. Not readable dir. #{path}"
 			end
 
-			# check and add new books, existing books will not be added
-			$db.add_books( [ path ], false)
-
-
 			html = %Q[<ul id="ul-lists" class="ul-lists">\n]
 
 			html << %Q[\t<li class="directory collapsed updir"><a href="#dir=#{File.dirname(path)}" rel="#{File.dirname(path)}/"><img src="/images/folder-mini-up.png" /><span>..</span></a></li>\n]
@@ -223,7 +219,7 @@ module Kamishibai
 					
 					book = $db.get_book_byfilename( fp )
 					unless book
-						puts "ERROR: bookcode #{bookcode} not found! skipping to next book..."
+						puts "ERROR: book not found! #{fp} skipping to next book..." if $debug
 						next
 					end
 
@@ -307,6 +303,14 @@ module Kamishibai
 			}
 
 			html << "</ul>\n"
+
+			# check and add new books, existing books will not be added
+			# run in separate thread to speed up, will eventually show all
+			# put at the end to speed up serving
+			Thread.new {
+				sleep 0.5
+				$db.add_books( [ path ], false)
+			}
 
 			return html
 		end
