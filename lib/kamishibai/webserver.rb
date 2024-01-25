@@ -256,7 +256,7 @@ module Kamishibai
 					li_classes = ['directory', 'collapsed']
 
 					icon = 'folder-mini.png'
-					if item == 'Trash'
+					if File.basename(item) == 'Trash'
 						el_id = 'id="trash"'
 						li_classes << 'trash'
 						if Dir.glob(item.escape_glob + '/*.cbz').entries.length > 0
