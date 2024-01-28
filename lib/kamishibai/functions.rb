@@ -195,33 +195,6 @@ def open_cbz( zfile, page = 1, options = {} )
 	end
 end
 
-# resize if too big (size or dimension)
-def re_image( image, quality, max_width, max_height, max_file_size )
-	options = {
-		quality: quality
-	}
-
-	to_resize = false
-
-	if defined?(ImageVoodoo)
-		ImageVoodoo.with_bytes( image ) { |jim|
-			to_resize = true if image.length > max_file_size
-			to_resize = true if jim.width > max_width or jim.height > max_height
-		}
-	else
-		gim = GD2::Image.load( image )
-		to_resize = true if image.length > max_file_size
-		to_resize = true if gim.width > max_width or gim.height > max_height
-		# small optimization to prevent doing double GD2::Image.load()
-		options[:gd2] = gim if to_resize
-	end
-	
-	# no resize
-	return image unless to_resize
-	# yes resize
-	return img_resize(image, max_width, max_height, options)
-end
-
 if defined?(ImageVoodoo)
 	# resize image using Java library
 	def img_resize( dat, w, h, options = {} )
@@ -229,13 +202,28 @@ if defined?(ImageVoodoo)
 
 		quality = options[:quality]
 		format = options[:format]
+		max_file_size = options[:max_file_size]
+
+		to_resize = false
+		to_resize = true if image.length > max_file_size
 
 		ssimg = ''
 		ImageVoodoo.with_bytes(dat) { |img|
-			scale = 1280 / img.width
+			to_resize = true if img.width > w and w > 0
+			to_resize = true if img.height > h and h > 0
 
-			img.scale( scale ) do |simg|
-				ssimg = simg.bytes( image_type( dat ).to_s )
+			if to_resize
+				scaleW = w / img.width
+				scaleH = h / img.height
+
+				scale = scaleW
+				scale = scaleH if scaleH < scaleW
+
+				img.scale( scale ) do |simg|
+					ssimg = simg.bytes( image_type( dat ).to_s )
+				end
+			else 
+				ssimg = dat
 			end
 		}
 
@@ -246,17 +234,12 @@ else
 	#   image will maintain aspect ratio and fit within width and height specified
 	#   if width or height is 0, it will use the image original resolution
 	def img_resize( dat, w, h, options = {} )
-		quality = options[:quality]
 		format = options[:format]
+		quality = options[:quality]
+		max_file_size = options[:max_file_size]
 
 		begin
-			img = nil
-			# if gd2 already provided, no need to load again
-			if options[:gd2]
-				img = options[:gd2]
-			else
-				img = GD2::Image.load(dat)
-			end
+			img = GD2::Image.load(dat)
 
 			# get image resolution
 			res = img.size
@@ -291,6 +274,8 @@ else
 						img.png
 					when :jpeg
 						if quality
+							img.jpeg( quality.to_i )
+						elsif dat.length > max_file_size
 							img.jpeg( quality.to_i )
 						else
 							img.jpeg

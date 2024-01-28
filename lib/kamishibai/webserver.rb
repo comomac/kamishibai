@@ -6,6 +6,7 @@ require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/json'
 require 'rbconfig'
+require 'memory_profiler'
 
 #
 # Kamishibai
@@ -392,7 +393,11 @@ module Kamishibai
 			max_file_size = 1024*1024*1.2 # 1.2mb
 			max_width  = 1080
 			max_height = 1920
-			img = re_image(image, quality, max_width, max_height, max_file_size)
+			img = img_resize(image, max_width, max_height, {
+				format: itype,
+				quality: quality,
+				max_file_size: max_file_size
+			})
 			if img == nil
 				halt 500, 'image is nil'
 			end
