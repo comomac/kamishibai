@@ -35,7 +35,7 @@ def start_auto_gen_thumbnail
 	return Thread.new {
 		while true	
 			paused_msg = true
-			for bookcode in $db.bookcodes
+			for bookcode in $db.books.keys
 				book = $db.get_book(bookcode)
 				# generate thumbnails if web request didnt happen for x seconds
 				if Time.now.to_i > $last_user_interaction_epoch + 10
@@ -54,7 +54,7 @@ def start_auto_gen_thumbnail
 			end
 			# slow, overall regen thumb from beginning of db
 			# wait longer the larger the db
-			wait_time_seconds = ($db.bookcodes.length / 100) * 11
+			wait_time_seconds = ($db.books.keys.length / 100) * 11
 			if wait_time_seconds > 3600
 				# max 1 hr
 				wait_time_seconds = 3600

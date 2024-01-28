@@ -24,7 +24,6 @@ module Kamishibai
 				# create fresh database
 				@books = {}
 				# indexes
-				@bookcodes = []
 				@files = {}
 				@inodes = {}
 			end
@@ -49,7 +48,7 @@ module Kamishibai
 		end
 
 		def has_bookcode?(bookcode)
-			@bookcodes.include?( bookcode )
+			@books.has_key?(bookcode)
 		end
 
 		def get_book(bookcode)
@@ -122,9 +121,6 @@ module Kamishibai
 						o.fullpath = f
 						o.exists   = true
 
-						# update index, as bookcodes is the list that keeps actual books that exists
-						@bookcodes << o.bookcode
-
 						@db_dirty = true
 					elsif o2 and fs.size == o2.size
 						# found existing book using inode and size, can detected changed filename in same filesystem
@@ -136,7 +132,6 @@ module Kamishibai
 						o2.exists   = true
 
 						# update indexes
-						@bookcodes << o2.bookcode
 						@files[ File.basename(f) ] = o2.bookcode
 
 						@db_dirty = true
@@ -167,7 +162,6 @@ module Kamishibai
 
 						# update indexes
 						@books[ o.bookcode ] = o
-						@bookcodes << o.bookcode
 						@files[ File.basename(f) ] = o.bookcode
 						@inodes[ o.inode ] = o.bookcode
 
@@ -184,7 +178,7 @@ module Kamishibai
 				}
 			end
 
-			puts "Found #{@bookcodes.length} books" if $debug
+			puts "Found #{@books.length} books" if $debug
 		end
 
 		# save database
@@ -276,7 +270,7 @@ module Kamishibai
 		def gen_bookcode
 			while true
 				word = GenChar(3)
-				break unless @bookcodes.include?(word) # find next available word
+				break unless @book.has_key?(word) # find next available word
 			end
 			return word
 		end
@@ -287,7 +281,6 @@ module Kamishibai
 			
 			# indexes for db, help to speed up database search
 			@files = {} # hash of files linked to bookcodes, format: files[basename] = bookcode
-			@bookcodes = [] # list of bookcodes, format: [ bookcode_a, bookcode_b, bookcode_c, ... ]
 			@inodes = {} # list of file inodes, format: inodes[inode] = bookcode
 
 			str = File.binread( @db_savepath )
@@ -310,14 +303,12 @@ module Kamishibai
 				@books[ o.bookcode ] = o
 				# update indexes
 				@files[ File.basename( o.fullpath ).delete('ÿ') ] = o.bookcode # utf8-mac puts ÿ in filename, need to remove first for cross os support
-				@bookcodes << o.bookcode
 				@inodes[ o.inode ] = o.bookcode
 			}
 			puts "load db done. #{@books.length} books #{Time.now}"
 			
 			# books format:   @books[ bookcode ] = Book obj
 			# + indexes    @files = { basename_a => bookcode_a, basename_b => bookcode_b, ... }
-			#              @bookcodes = [ bookcode_a, bookcode_b, ... ]
 			#              @inodes = { inode_a => bookcode_a, inode_b => bookcode_b, ... }
 		end
 
