@@ -64,31 +64,4 @@ module Kamishibai
 	end
 	
 	Book = $structBook
-
-	# class BookZZZ
-	# 	attr_reader :bookcode, :title, :author, :fullpath, :mtime, :itime, :rtime, :size, :inode, :page, :pages, :exists
-	# 	attr_writer :bookcode, :title, :author, :fullpath, :mtime, :itime, :rtime, :size, :inode, :page, :pages, :exists
-
-	# 	def initialize(params=nil)
-	# 		# blank book obj
-	# 		re†urn unless params.class == Hash
-
-	# 		# load from db
-	# 		@bookcode = params[:bookcode]  if params[:bookcode]
-	# 		@title    = params[:title]     if params[:title]
-	# 		@author   = params[:author]    if params[:author]
-	# 		@fullpath = params[:fullpath]  if params[:fullpath]
-	# 		@size     = params[:size]      if params[:size]
-	# 		@mtime    = params[:mtime]     if params[:mtime]
-	# 		@inode    = params[:inode]     if params[:inode]
-	# 		@itime    = params[:itime]     if params[:itime]
-	# 		@rtime    = params[:rtime]     if params[:rtime]
-	# 		@page     = params[:page]      if params[:page]
-	# 		@pages    = params[:pages]     if params[:pages]
-
-	# 		# populate data if doesn't exist
-	# 		@title    = Kamishibai::CBZFilename.title( @fullpath )  unless @title
-	# 		@author   = Kamishibai::CBZFilename.author( @fullpath ) unless @author
-	# 	end
-	# end
 end
