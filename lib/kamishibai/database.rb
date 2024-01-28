@@ -17,6 +17,10 @@ module Kamishibai
 		def initialize( db_filepath, bookmarks_filepath )
 			@db_savepath = db_filepath
 			@db_dirty = true
+			# keep track of dirs to add, to prevent dup dir or nested
+			@pending_add_books_dirs = [
+				# { dir: /a/b/c, time: <inserted epoch time> },
+			]
 
 			if File.exists?( @db_savepath ) and File.size( @db_savepath ) > 0
 				load_database
@@ -97,6 +101,17 @@ module Kamishibai
 			srcs = cleanup_srcs( srcs )
 			
 			for src in srcs
+				# # make sure no dups so no repeated rescan in x seconds
+				# # clean up first
+				@pending_add_books_dirs.delete_if { |x| x[:time] + 10 <= Time.now.to_i }
+				# check for dup or nested dir, if so, skip
+				if @pending_add_books_dirs.select { |x| src.include?(x[:dir]) }.length > 0
+					puts "skip repeat dir! #{src}"
+					next
+				end
+				# not exist. add then scan dir
+				@pending_add_books_dirs << { dir: src, time: Time.now.to_i }
+
 				# stopped using find module, because it wrack encoding havoc in windows (gives ??? character in unicode filename)
 				# now using Dir.glob instead
 				if recursive
@@ -105,7 +120,6 @@ module Kamishibai
 					search = '/*.cbz'
 				end
 
-				count = 0
 				Dir.glob(File.expand_path(src).escape_glob + search).delete_if { |f|
 					restricted_dir?(f)
 				}.each { |f|
@@ -171,8 +185,7 @@ module Kamishibai
 					end
 
 					# save every 100th
-					count += 1
-					if count % 100 == 0
+					if @books.length % 100 == 0
 						self.save
 					end
 				}
@@ -270,7 +283,7 @@ module Kamishibai
 		def gen_bookcode
 			while true
 				word = GenChar(3)
-				break unless @book.has_key?(word) # find next available word
+				break unless @books.has_key?(word) # find next available word
 			end
 			return word
 		end
