@@ -101,8 +101,8 @@ module Kamishibai
 			srcs = cleanup_srcs( srcs )
 			
 			for src in srcs
-				# # make sure no dups so no repeated rescan in x seconds
-				# # clean up first
+				# make sure no dups so no repeated rescan in x seconds
+				# clean up first
 				@pending_add_books_dirs.delete_if { |x| x[:time] + 10 <= Time.now.to_i }
 				# check for dup or nested dir, if so, skip
 				if @pending_add_books_dirs.select { |x| src.include?(x[:dir]) }.length > 0

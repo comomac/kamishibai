@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'addressable', '>= 2.3.5'
   s.add_dependency 'thin',      '>= 1.6.0'
   s.add_dependency 'ffi',       '>= 1.9.0'
-  s.add_dependency 'gd2-ffij',  '>= 0.1.1'
+  s.add_dependency 'gd2-ffij',  '>= 0.4.0'
   s.add_dependency 'json',      '>= 1.7.7'
   s.add_dependency 'rubyzip',   '>= 1.0.0'
   s.add_dependency 'sinatra',   '>= 1.4.4'

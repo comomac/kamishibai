@@ -393,6 +393,12 @@ module Kamishibai
 			max_file_size = 1024*1024*1.2 # 1.2mb
 			max_width  = 1080
 			max_height = 1920
+			# do not resize from settings
+			unless $settings.image_resize
+				max_file_size = 1024*1024*1024 # 1gb
+				max_width  = 0
+				max_height = 0
+			end
 			img = img_resize(image, max_width, max_height, {
 				format: itype,
 				quality: quality,
@@ -861,5 +867,29 @@ module Kamishibai
 			"deleted #{File.basename(fp)}"
 		end
 
+		get '/gc_stat' do
+			content_type :text
+			JSON.pretty_generate(GC.stat)
+		end
+
+		get '/gc_start' do
+			GC.start
+			content_type :text
+			'done'
+		end
+
+		get '/mem_prof' do
+			content_type :text
+			unless $pf
+				$pf = true
+				MemoryProfiler.start
+				'mp started'
+			else
+				$pf = false
+				report = MemoryProfiler.stop
+				report.pretty_print
+				'mp stopped'
+			end
+		end
 	end
 end

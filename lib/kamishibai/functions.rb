@@ -247,7 +247,11 @@ else
 			ih = res[1]
 
 			# calc new width and height
-			if w == 0
+			if w <= 0 and h <= 0
+				# dont change resolution
+				w = iw
+				h = ih
+			elsif w == 0
 				w = (h * img.aspect).to_i
 
 			elsif h == 0
@@ -261,50 +265,42 @@ else
 				end
 			end
 
-			puts "resizing image… width: #{w}, height: #{h}, quality: #{quality}" if $debug
-
 			# make sure it doesn't upscale image
 			if iw > w and ih > h
+				tick = Time.now
 				img.resize!( w, h )
+				tock = ((Time.now - tick).to_f * 1000).to_i
+				puts "resizing image… w,h #{res.join(',')} -> #{w},#{h} quality: #{quality}  took #{tock} ms" if $debug
 			end
 
-			if format
-				case format
-					when :png
-						img.png
-					when :jpeg
-						if quality
-							img.jpeg( quality.to_i )
-						elsif dat.length > max_file_size
-							img.jpeg( quality.to_i )
-						else
-							img.jpeg
-						end
-					when :gif
-						img.gif
+			# use original format if not given
+			unless format
+				format = image_type(dat)
+			end
+
+			case format
+				when :png
+					img.png
+				when :jpeg
+					if quality
+						img.jpeg( quality.to_i )
+					elsif dat.length > max_file_size
+						# force quality if too big
+						img.jpeg( quality.to_i )
 					else
-						raise 'img_resize(elsif format), unknown output format'
-				end
-			else
-				case image_type(dat)
-					when :png
-						img.png
-					when :jpeg
-						if quality
-							img.jpeg( quality.to_i )
-						else
-							img.jpeg
-						end
-					when :gif
-						img.gif
-					else
-						raise 'img_resize(else), unknown output format'
-				end
+						img.jpeg
+					end
+				when :gif
+					img.gif
+				else
+					raise 'img_resize(elsif format), unknown output format'
 			end
 
 		rescue => errmsg
 			puts "error: resize failed. #{w} #{h} #{quality}\n#{errmsg}"
 			return nil
+		ensure
+			img = nil
 		end
 	end
 end
