@@ -238,70 +238,83 @@ else
 		quality = options[:quality]
 		max_file_size = options[:max_file_size]
 
-		begin
-			img = GD2::Image.load(dat)
+		# fork image resize into separate process
+		# this is a hack to stop memory leak in linux
+		rd, wr = IO.pipe
+		fork do
+			rd.close
+			out = ""
+			begin
+				img = GD2::Image.load(dat)
 
-			# get image resolution
-			res = img.size
-			iw = res[0]
-			ih = res[1]
+				# get image resolution
+				res = img.size
+				iw = res[0]
+				ih = res[1]
 
-			# calc new width and height
-			if w <= 0 and h <= 0
-				# dont change resolution
-				w = iw
-				h = ih
-			elsif w == 0
-				w = (h * img.aspect).to_i
-
-			elsif h == 0
-				h = (w / img.aspect).to_i
-
-			else
-				if iw >= ih
+				# calc new width and height
+				if w <= 0 and h <= 0
+					# dont change resolution
+					w = iw
+					h = ih
+				elsif w == 0
 					w = (h * img.aspect).to_i
-				else
+
+				elsif h == 0
 					h = (w / img.aspect).to_i
-				end
-			end
 
-			# make sure it doesn't upscale image
-			if iw > w and ih > h
-				tick = Time.now
-				img.resize!( w, h )
-				tock = ((Time.now - tick).to_f * 1000).to_i
-				puts "resizing image… w,h #{res.join(',')} -> #{w},#{h} quality: #{quality}  took #{tock} ms" if $debug
-			end
-
-			# use original format if not given
-			unless format
-				format = image_type(dat)
-			end
-
-			case format
-				when :png
-					img.png
-				when :jpeg
-					if quality
-						img.jpeg( quality.to_i )
-					elsif dat.length > max_file_size
-						# force quality if too big
-						img.jpeg( quality.to_i )
-					else
-						img.jpeg
-					end
-				when :gif
-					img.gif
 				else
-					raise 'img_resize(elsif format), unknown output format'
+					if iw >= ih
+						w = (h * img.aspect).to_i
+					else
+						h = (w / img.aspect).to_i
+					end
+				end
+
+				# make sure it doesn't upscale image
+				if iw > w and ih > h
+					tick = Time.now
+					img.resize!( w, h )
+					tock = ((Time.now - tick).to_f * 1000).to_i
+					puts "resizing image… w,h #{res.join(',')} -> #{w},#{h} quality: #{quality}  took #{tock} ms" if $debug
+				end
+
+				# use original format if not given
+				unless format
+					format = image_type(dat)
+				end
+
+				case format
+					when :png
+						out = img.png
+					when :jpeg
+						if quality
+							out = img.jpeg( quality.to_i )
+						elsif dat.length > max_file_size
+							# force quality if too big
+							out = img.jpeg( quality.to_i )
+						else
+							out = img.jpeg
+						end
+					when :gif
+						out = img.gif
+					else
+						raise 'img_resize(elsif format), unknown output format'
+				end
+
+			rescue => errmsg
+				puts "error: resize failed. #{w} #{h} #{quality}\n#{errmsg}"
 			end
 
-		rescue => errmsg
-			puts "error: resize failed. #{w} #{h} #{quality}\n#{errmsg}"
-			return nil
-		ensure
-			img = nil
+			dat = StringIO.new(out)
+			len = 1024*16 # osx/bsd pipe default max size
+			while !dat.eof
+				wr.write(dat.read(len).force_encoding('utf-8'))
+			end
 		end
+
+		wr.close
+		return rd.read
 	end
 end
 
