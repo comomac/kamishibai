@@ -22,7 +22,7 @@ module Kamishibai
 				# { dir: /a/b/c, time: <inserted epoch time> },
 			]
 
-			if File.exists?( @db_savepath ) and File.size( @db_savepath ) > 0
+			if File.exist?( @db_savepath ) and File.size( @db_savepath ) > 0
 				load_database
 			else
 				# create fresh database
@@ -36,7 +36,7 @@ module Kamishibai
 			@bookmarks_savepath = bookmarks_filepath
 
 			# restore bookmark
-			if File.exists?( @bookmarks_savepath )
+			if File.exist?( @bookmarks_savepath )
 				bookmarks = read_bookmarks
 				bookmarks.keys.each { |bookcode|
 					h = bookmarks[bookcode]
@@ -200,7 +200,7 @@ module Kamishibai
 			return unless force
 			
 			# create dir if dir doesn't exist
-			if ! FileTest.exists?( File.dirname( @db_savepath ) )
+			if ! FileTest.exist?( File.dirname( @db_savepath ) )
 				FileUtils.mkdir_p( File.dirname( @db_savepath ) )
 			end
 
@@ -328,7 +328,7 @@ module Kamishibai
 		# load bookmarks file (small), more upto date
 		def read_bookmarks
 			# create dir
-			if ! FileTest.exists?( File.dirname( @bookmarks_savepath ) )
+			if ! FileTest.exist?( File.dirname( @bookmarks_savepath ) )
 				FileUtils.mkdir_p( File.dirname( @bookmarks_savepath ) )
 			end
 

@@ -15,7 +15,7 @@ module Kamishibai
 		def initialize( path = '~/etc/kamishibai.conf' )
 			@config_path = File.expand_path( path )
 
-			if File.exists?( @config_path )
+			if File.exist?( @config_path )
 				load
 			else
 				# settings template
@@ -38,7 +38,7 @@ module Kamishibai
 		end
 
 		def save
-			unless FileTest.exists?( File.dirname( @config_path ) )
+			unless FileTest.exist?( File.dirname( @config_path ) )
 				FileUtils.mkdir_p( File.dirname( @config_path ) )
 			end
 

@@ -154,7 +154,7 @@ end
 
 # cbz file accessor, give file name and page and you shall receive
 def open_cbz( zfile, page = 1, options = {} )
-	if !FileTest.exists?(zfile)
+	if !FileTest.exist?(zfile)
 		puts "error: cbz file not found #{zfile}"
 		return nil
 	end
@@ -331,7 +331,7 @@ def mk_thumb(f_cbz, empty_return = false)
 
 	f = $settings.cache_path + '/' + File.basename( f_cbz.delete('ÿ') ).gsub('.cbz','.jpeg') # utf8-mac puts ÿ in filename, need to remove first for cross os support
 
-	if File.exists?( f )
+	if File.exist?( f )
 		if File.size( f ) == 0
 			File.delete( f )
 		else
@@ -352,7 +352,7 @@ def mk_thumb(f_cbz, empty_return = false)
 
 	begin
 		# store image to cache dir
-		FileUtils.mkdir_p( File.dirname( f ) ) if ! Dir.exists?( File.dirname( f ) )
+		FileUtils.mkdir_p( File.dirname( f ) ) if ! Dir.exist?( File.dirname( f ) )
 		File.binwrite( f, image )
 	rescue => errmsg
 		puts "\nthumbnail storage failed: #{f} >> #{errmsg} … retrying\n"

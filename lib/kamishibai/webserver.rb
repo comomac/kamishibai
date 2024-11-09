@@ -86,7 +86,7 @@ module Kamishibai
 					not_found "No such page. #{ page } #{ bookcode } #{ @book.fullpath }"
 				end
 
-				if ! FileTest.exists?( @book.fullpath )
+				if ! FileTest.exist?( @book.fullpath )
 					not_found "File don't exists. #{ bookcode } #{ @book.fullpath }"
 				end
 
@@ -173,7 +173,7 @@ module Kamishibai
 
 			order_by = request['order_by'] || ""
 
-			unless FileTest.exists?(path)
+			unless FileTest.exist?(path)
 				halt 400, "Error. No such dir. #{path}"
 			end
 
@@ -323,7 +323,7 @@ module Kamishibai
 
 			html = %Q[<ul class="jqueryFileTree" style="display: none;">\n]
 
-			if FileTest.exists?(File.expand_path(path))
+			if FileTest.exist?(File.expand_path(path))
 
 				# chdir() to user requested dir (root + "/" + dir)
 				Dir.chdir(File.expand_path(path).untaint);
