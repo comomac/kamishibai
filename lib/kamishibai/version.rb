@@ -3,5 +3,5 @@
 # License: refer to LICENSE file
 
 class Kamishibai
-	VERSION = "1.0.0"
+	VERSION = "1.4.0"
 end
