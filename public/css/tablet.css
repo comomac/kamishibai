@@ -111,6 +111,11 @@
 	margin-top: 5px;
 	margin-left: 15px;
 }
+.bookpages {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+}
 
 .li-title {
 	/*
@@ -204,8 +209,10 @@
 	overflow: hidden;
 	/*background-color: yellow;
 	 opacity: 0.3; */
+	/* hack to fix new ios not showing "open in new tab" in tablet > books list */
+	-webkit-touch-callout: default;
 }
-#rcontainer ul li a span {
+#rcontainer ul li a span.title {
 	position: absolute;
 	bottom: 0px;
 	font-size: smaller;

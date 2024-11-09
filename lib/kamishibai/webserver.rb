@@ -2,13 +2,11 @@
 
 # License: refer to LICENSE file
 
-require 'haml'
-require 'pp' if $debug
 require 'sinatra'
 require 'sinatra/base'
 require 'sinatra/json'
-#require 'rack/contrib/try_static'
 require 'rbconfig'
+require 'memory_profiler'
 
 #
 # Kamishibai
@@ -20,7 +18,6 @@ module Kamishibai
 		# shutdown hook, save database and bookmarks when exiting
 		at_exit do
 			$db.save
-			$db.save_bookmarks
 		end
 
 		# smaller, quicker web server
@@ -47,12 +44,6 @@ module Kamishibai
 			# setup public location
 			set :public_folder, File.expand_path(settings.views + '/../public')
 
-			# setup 2nd public location for vendor libraries
-			# use Rack::TryStatic,
-			# 	:root => File.expand_path(settings.views + '/../public/vendor'),
-			# 	:urls => %w[/], try: ['.html', 'index.html', '/index.html']
-
-
 			# authentication
 			use Rack::Auth::Basic, "Restricted Area" do |username, password|
 				[username, password] == [$settings.username, $settings.password]
@@ -70,6 +61,9 @@ module Kamishibai
 		# setup instance variable
 		before do
 			# global instance var
+
+			# last any request interaction
+			$last_user_interaction_epoch = Time.now.to_i
 		end
 
 		# helper functions
@@ -101,11 +95,27 @@ module Kamishibai
 				end
 			end
 
-			# regular expression from POST keyword search
-			def pregex
-				keyword = request['keyword'].untaint
-				keyword = keyword.gsub(' ','.+')
-				return Regexp.new( keyword, Regexp::IGNORECASE )
+			# search_words gives an array of words that user is looking for
+			def search_words(keyword='')
+				# convert all other white space characters to normal space character
+				keyword = keyword.downcase
+				for spc in white_space_characters
+					keyword = keyword.gsub(spc,' ')
+				end
+
+				# words to search for
+				return keyword.split(' ').compact
+			end
+
+			def white_space_characters
+				# white space characters
+				# https://en.wikipedia.org/wiki/Whitespace_character
+				return [
+					"\u{0009}", "\u{0020}", "\u{00a0}", "\u{1680}", "\u{2000}", 
+					"\u{2001}", "\u{2002}", "\u{2003}", "\u{2004}", "\u{2004}", 
+					"\u{2005}", "\u{2006}", "\u{2007}", "\u{2008}", "\u{2009}", 
+					"\u{200a}", "\u{202f}", "\u{205f}", "\u{3000}" 
+				]
 			end
 		end
 
@@ -123,10 +133,14 @@ module Kamishibai
 			redirect '/browse.html'
 		end
 
-		get '/statistics' do
-			haml :statistics, :layout => false
+		get '/api/stats' do
+			jdat = $db.get_stats
+			jdat[:uptimeSeconds] = (Time.now - $webserver_start_time).to_i
+
+			json jdat
 		end
 
+		# remember page read
 		post '/api/book/bookmark' do
 			bookcode = params[:bookcode].untaint
 			page     = params[:page].to_i
@@ -143,119 +157,107 @@ module Kamishibai
 			json $settings.srcs
 		end
 
+		get '/api/drives' do
+			json available_drives
+		end
+
 		# directory browse page
-		post '/api/dir_list' do
+		get '/api/dir_list' do
 			content_type :text
-			path = File.expand_path( request['dir'].untaint )
-			order_by = request['order_by'].untaint
+
+			dir = request['dir'] || ""
+			unless dir.length > 0
+				halt 400, "Error. dir not provided"
+			end
+			path = File.expand_path( dir )
+
+			order_by = request['order_by'] || ""
 
 			unless FileTest.exists?(path)
-				errmsg = "Error. No such path. #{path}"
-				puts errmsg if $debug
-				# not_found errmsg
-
-				return errmsg
+				halt 400, "Error. No such dir. #{path}"
 			end
 
 			unless File.stat(path).readable_real?
-				errmsg = "Error. Not readable path. #{path}"
-				puts errmsg if $debug
-				# not_found errmsg
-
-				return errmsg
+				halt 400, "Error. Not readable dir. #{path}"
 			end
 
-			# check and add new books, existing books will not be added
-			$db.add_books( [ path ], false)
-			# refresh db, make sure book filepath is valid
-			$db.refresh_bookcodes
+			html = %Q[<ul id="ul-lists" class="ul-lists">\n]
 
+			html << %Q[\t<li class="directory collapsed updir"><a href="#dir=#{File.dirname(path)}" rel="#{File.dirname(path)}/"><img src="/images/folder-mini-up.png" /><span>..</span></a></li>\n]
 
-			html = "<ul id=\"ul-lists\" class=\"ul-lists\">\n"
-
-			html << "\t<li class=\"directory collapsed updir\"><a href=\"#dir=#{File.dirname(path)}\" rel=\"#{File.dirname(path)}/\"><img src=\"/images/folder-mini-up.png\" /><span>..</span></a></li>\n"
-
-
+			keyword = request['keyword'] || ""
+			keywords = search_words(keyword)
 
 			# poulate the lists with files(books) and directory
-			lists = []
+			lists = [
+				# [ File::Stat, Book ],
+				# [ File::Stat, dir(string) ],
+			]
 			Dir.glob(path.escape_glob + '/*').entries.sort.each { |fp|
-				next unless File.stat(fp).readable_real?
+				fs = File.stat(fp)
+				# skip unreadable file/dir (permission)
+				next unless fs.readable_real?
 
-				dir = File.dirname(fp)
+				# search for all keywords
 				f =   File.basename(fp)
-				ext = File.extname(fp)[1..-1]
-
-				next unless pregex.match( f ) # skip unless file/dir name match the searchbox's keyword
-
-				if FileTest.directory?(fp) and File.stat(fp).executable_real?
+				found = 0
+				for kw in keywords
+					if f.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+			
+				if fs.directory? and fs.executable_real?
 					# a directory
-					lists << fp
+					lists << [fs, fp]
 
-				elsif ext == 'cbz' and File.stat(fp).readable_real?
+				elsif File.extname(fp) == '.cbz' and fs.readable_real?
 					# a file
 					
-					bookcode = $db.get_bookcode_byfilename( fp )
-					unless bookcode
-						puts "ERROR: bookcode #{bookcode} not found! skipping to next book..."
+					book = $db.get_book_byfilename( fp )
+					unless book
+						puts "ERROR: book not found! #{fp} skipping to next book..." if $debug
 						next
 					end
 
-					book = $db.get_book( bookcode )
-
-					lists << book
+					lists << [fs, book]
 				end
 			}
 
-			# sort by order
-			lists2 = {}
-			case order_by
-				when 'size'
-					lists.each { |x|
-
-						if x.class == Book
-							lists2[x] = x.size
-						else
-							# x == full path of file or directory
-							lists2[x] = 0
-						end
-					}
-
-					lists2 = lists2.sort { |a, b|	b[1] <=> a[1] }
-
-				when 'date'
-					lists.each { |x|
-						if x.class == Book
-							lists2[x] = x.mtime
-						else
-							# x == full path of file or directory
-							lists2[x] = File.stat(x).mtime.to_i
-						end
-					}
-					lists2 = lists2.sort { |a, b| b[1] <=> a[1] }
-
-				else
-					# by name, default
-					lists.each { |x|
-						if x.class == Book
-							lists2[x] = File.basename( x.fullpath )
-						else
-							# x == full path of file or directory
-							lists2[x] = File.basename( x )
-						end
-					}
-					lists2 = lists2.sort { |a, b| a[1] <=> b[1] }
+			# sort order
+			if order_by == 'size'
+				# by file size (big to small)
+				lists.sort! { |b,a|
+					a[0].size <=> b[0].size
+				}
+			elsif order_by == 'date'
+				# by create date (latest to oldest)
+				lists.sort! { |b,a|
+					a[0].ctime <=> b[0].ctime
+				}
+			else
+				# by file name (a to z)
+				lists.sort! { |a,b|
+					fa = a[1].class == Book ? File.basename(a[1].fullpath) : a[1]
+					fb = b[1].class == Book ? File.basename(b[1].fullpath) : b[1]
+					fa<=>fb
+				}
 			end
 
-			# create html from lists(2)
-			lists2.each { |item, dat|
+			# create html from lists
+			lists.each { |fs, item|
 
 				if item.class == String
 					# a directory
 
 					li_classes = ['directory', 'collapsed']
 
-					if item == 'Trash'
+					icon = 'folder-mini.png'
+					if File.basename(item) == 'Trash'
 						el_id = 'id="trash"'
 						li_classes << 'trash'
 						if Dir.glob(item.escape_glob + '/*.cbz').entries.length > 0
@@ -263,22 +265,19 @@ module Kamishibai
 						else
 							icon = 'trash-empty-mini.png'
 						end
-					else
-						icon = 'folder-mini.png'
 					end
 
-					html << "\t<li class=\"" + li_classes.join(' ') + "\" #{el_id}><a href=\"#dir=#{item}\" rel=\"#{item}/\"><img src=\"/images/" + icon + "\" /><span>#{File.basename(item)}</span></a></li>\n"
+					html << %Q[\t<li class="#{li_classes.join(' ')}" #{el_id}><a href="#dir=#{item}" rel="#{item}/"><img src="/images/#{icon}" /><span>#{File.basename(item)}</span></a></li>\n]
 
 				elsif item.class == Book
-					# a file
+					# a book (file)
 
 					book = item
 					bookcode = book.bookcode
-					fp = book.fullpath
-					f = File.basename(fp)
-					ext = File.extname(fp)[1..-1]
 
-					img = "<img class='lazy fadeIn fadeIn-1s fadeIn-Delay-Xs' data-original='/api/book/thumb/#{bookcode}' alt='Loading...' />"
+					img = %Q[<img class="lazy fadeIn fadeIn-1s fadeIn-Delay-Xs" data-original="/api/book/thumb/#{bookcode}" alt="Loading..." />]
+					href = '/tablet.html#book=' + bookcode
+					readstate = 'read'
 
 					if book.page
 						# prepare the value for the visual read progress
@@ -290,19 +289,28 @@ module Kamishibai
 
 						# read percentage css class
 						if pc > 0
-							readstate = 'read' + pc.to_i.to_s
+							readstate += pc.to_i.to_s
 						else
-							readstate = 'read5'
+							readstate += '5'
 						end
 
-						href = '/tablet.html#book=' + bookcode + '&page=' + page.to_s
+						href += '&page=' + page.to_s
 					else
-						readstate = 'read0'
-						href = '/tablet.html#book=' + bookcode
+						readstate += '0'
 					end
 
-					html << "\t<li class=\"file ext_#{ext}\"><a href=\"#{href}\" bookcode=\"#{bookcode}\" rel=\"#{fp}\">#{img}<span class=\"#{readstate}\">#{f.escape_html}</span><span class=\"badge badge-info bookpages\">#{book.pages}</span></a></li>\n"
+					html << %Q[\t<li class="file ext_cbz"><a href="#{href}&dir=#{path}" bookcode="#{bookcode}" rel="#{book.fullpath}">#{img}<span class="#{readstate}">#{File.basename(book.fullpath).escape_html}</span><span class="badge badge-info bookpages">#{book.pages}</span></a></li>\n]
 				end
+			}
+
+			html << "</ul>\n"
+
+			# check and add new books, existing books will not be added
+			# run in separate thread to speed up, will eventually show all
+			# put at the end to speed up serving
+			Thread.new {
+				sleep 0.5
+				$db.add_books( [ path ], false)
 			}
 
 			return html
@@ -313,7 +321,7 @@ module Kamishibai
 			content_type :text
 			path = request['dir'].untaint
 
-			html = "<ul class=\"jqueryFileTree\" style=\"display: none;\">\n"
+			html = %Q[<ul class="jqueryFileTree" style="display: none;">\n]
 
 			if FileTest.exists?(File.expand_path(path))
 
@@ -322,11 +330,13 @@ module Kamishibai
 
 				#loop through all directories
 				Dir.glob("*") { |x|
-					next unless File.directory?(x.untaint)
-					next unless File.stat(x.untaint).readable_real? and File.stat(x.untaint).executable_real?
+					fs = File.stat(x.untaint)
+					next unless fs.directory?
+					next unless fs.readable_real?
+					next unless fs.executable_real?
 
 					fp = path + x
-					html << "\t<li class=\"directory collapsed\"><a href=\"#\" rel=\"#{fp}/\" onclick=\"selected_dir('#{fp}');\">#{x.escape_html}</a></li>\n";
+					html << %Q[\t<li class="directory collapsed"><a href="#" rel="#{fp}/" onclick="selected_dir('#{fp}');">#{x.escape_html}</a></li>\n]
 				}
 
 			end
@@ -379,29 +389,507 @@ module Kamishibai
 			itype = image_type( image )
 			content_type itype
 
-			# # fake delay
-			# Thread.new {
-			# 	sleep 7
-			# 	$imgNum = 0
-			# 	sleep 7
-			# 	$imgNum = 0
-			# }
-			# sleep 1.5 * $imgNum
-			# $imgNum -= 1
+			# recompress/resize if needed
+			max_file_size = 1024*1024*1.2 # 1.2mb
+			max_width  = 1080
+			max_height = 1920
+			# do not resize from settings
+			unless $settings.image_resize
+				max_file_size = 1024*1024*1024 # 1gb
+				max_width  = 0
+				max_height = 0
+			end
+			img = img_resize(image, max_width, max_height, {
+				format: itype,
+				quality: quality,
+				max_file_size: max_file_size
+			})
+			if img == nil
+				halt 500, 'image is nil'
+			end
 
-			if width > 0 and height > 0 and $settings.image_resize
-				# resize image
-				img_resize( image, width, height, { :quality => quality })
+			img
+		end
+
+		########################################
+		#
+		# simple mode - books top menu section
+		#
+		########################################
+
+		# show all unique titles
+		post '/api/books/all' do
+			keywords = search_words(request['keyword'])
+
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.exists
+				next unless book.title
+
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by title alphabetically
+			titles = titles.sort { |a, b| a[0] <=> b[0] }
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+		# lists containing newly imported books
+		post '/api/books/new' do
+			keywords = search_words(request['keyword'])
+
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.exists
+				next unless book.itime
+				next unless Time.now.to_i - book.itime < 3600*24*$settings.new_book_days
+				next unless book.title
+
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by time last imported
+			titles = titles.sort { |a, b|
+				newest_a = 0
+				a[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).itime
+					newest_a = rtime if rtime and rtime > newest_a
+				}
+
+				newest_b = 0
+				b[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).itime
+					newest_b = rtime if rtime and rtime > newest_b
+				}
+
+				newest_b <=> newest_a
+			}
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+
+		# lists books that are unfinish reading
+		post '/api/books/reading' do
+			keywords = search_words(request['keyword'])
+
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.exists
+				next unless book.page
+				next unless book.page < book.pages
+				next unless book.title
+				
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by time last read
+			titles = titles.sort { |a, b|
+				newest_a = 0
+				a[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_a = rtime if rtime and rtime > newest_a
+				}
+
+				newest_b = 0
+				b[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_b = rtime if rtime and rtime > newest_b
+				}
+
+				newest_b <=> newest_a
+			}
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+		# lists books that are finish reading
+		post '/api/books/finished' do
+			keywords = search_words(request['keyword'])
+
+			titles = {}
+			$db.books.each { |bookcode, book|
+				next unless book.exists
+				next unless book.page
+				next unless book.page == book.pages
+				next unless book.title
+				
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.title.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+
+				if titles[ book.title ]
+					titles[ book.title ] << book.bookcode
+				else
+					titles[ book.title ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by time last read
+			titles = titles.sort { |a, b|
+				newest_a = 0
+				a[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_a = rtime if rtime and rtime > newest_a
+				}
+
+				newest_b = 0
+				b[1].each { |bookcode|
+					rtime = $db.get_book(bookcode).rtime
+					newest_b = rtime if rtime and rtime > newest_b
+				}
+
+				newest_b <=> newest_a
+			}
+
+			jTitles = []
+			titles.each { |title, bookcodes|
+				jTitles << {
+					:title => title,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jTitles
+		end
+
+		# show books grouped by author
+		post '/api/books/author' do
+			keywords = search_words(request['keyword'])
+
+			authors = {}
+			$db.books.each { |bookcode, book|
+				next unless book.exists
+				next unless book.author
+
+				# search for all keywords
+				found = 0
+				for kw in keywords
+					if book.author.downcase.include?(kw)
+						found+=1
+					else
+						# stop early to save cpu cycles
+						break
+					end
+				end
+				next if found < keywords.length
+
+				if authors[ book.author ]
+					authors[ book.author ] << book.bookcode
+				else
+					authors[ book.author ] = [ book.bookcode ]
+				end
+			}
+
+			# sort by author alphabetically
+			authors = authors.sort { |a, b| a[0] <=> b[0] }
+
+			jAuthors = []
+			authors.each { |author, bookcodes|
+				jAuthors << {
+					:author => author,
+					:bookcodes => bookcodes
+				}
+			}
+
+			json jAuthors
+		end
+
+		# list books with meta-data
+		get '/api/books/info' do
+			content_type :json
+
+			bookcodes = request['bookcodes'] ? request['bookcodes'].split(',') : []
+			options   = request['options']   ? request['options'].split(',') : []
+
+			books = []
+
+			for bookcode in bookcodes
+				if $db.has_bookcode?( bookcode )
+					book = $db.get_book( bookcode )
+
+					# book volume/chapter/etc info
+					bn = File.basename( book.fullpath )
+					bn = bn.gsub( File.extname(bn), '' )
+					bn = bn.gsub( book.title, '' )
+					# bn = bn.gsub( bn.replace(/\'/,'&#39;'), '' )
+					bn = bn.gsub( /(\(.+?\))/, '' )
+					bn = bn.gsub( /(\[.+?\])/, '' )
+					bn = bn.gsub( /(\[\])/, '' )
+					bn = bn.gsub( / +/, ' ' )
+					bn.strip!
+
+					books << {
+						:bookcode => bookcode,
+						:title  => book.title,
+						:sname  => bn,
+						:author => book.author,
+						:size   => book.size,
+						:mtime  => book.mtime,
+						:itime  => book.itime,
+						:rtime  => book.rtime,
+						:page   => book.page,
+						:pages  => book.pages
+					}
+				end
+			end
+
+			# sort by book title if possible
+			if bookcodes.length <= 100
+				# by title and volume/chapter
+				books.sort! { |a,b|
+					aa = (%Q[#{a[:title]} #{a[:sname]}]).naturalized.to_s
+					bb = (%Q[#{b[:title]} #{b[:sname]}]).naturalized.to_s
+					aa > bb ? 1 : 0
+				}
+			end
+
+			books2 = {}
+			books.each { |book|
+				books2[book[:bookcode]] = book
+			}
+
+			JSON.pretty_generate( books2 )
+		end
+
+		########################################
+		#
+		# configuration page
+		#
+		########################################
+
+		# read config
+		get '/config' do
+			case request['get']
+				when 'srcs'
+					# get list of sources
+					json $settings.srcs
+				when 'prefs'
+					# 
+					jdat = {
+						port:    $settings.port,
+						user:    $settings.username,
+						pass:    $settings.password,
+						resize:  $settings.image_resize,
+						quality: $settings.default_image_quality,
+						new_book_days:  $settings.new_book_days,
+					}
+					json jdat
+
+				when 'total_books'
+					# get number of books in db
+					content_type :javascript
+					$db.books.length.to_s
+				else
+					'get=?'
+			end
+		end
+
+		# save config
+		post '/config' do
+			case request['set']
+				when 'srcs'
+					# save book sources
+					old_srcs = $settings.srcs.collect { |d|
+						if d[-1..-1] == '/'
+							d[0..-2]
+						else
+							d[0..-1]
+						end
+					}.sort
+
+					srcs = request['srcs'].split('||||').compact
+					srcs = srcs.collect { |d|
+						if d[-1..-1] == '/'
+							d[0..-2]
+						else
+							d[0..-1]
+						end
+					}.sort
+					$settings.srcs = srcs
+
+					$settings.save
+
+					# srcs has changed, reload the whole kamishibai, to reload the db
+					if old_srcs != srcs
+						init_database
+					end
+				when 'prefs'
+					# save settings
+					r = request
+
+					old_port = $settings.port
+					$settings.port = r['port'].to_i
+					$settings.image_resize = r['resize'] == 'on' ? true : false
+					$settings.username = r['user']
+					$settings.password = r['pass']
+					$settings.new_book_days = r['new_book_days'].to_i
+					$settings.default_image_quality = r['quality'].to_i
+
+					$settings.save
+
+					if $settings.port != old_port
+						# restart webserver if port is different from old port
+						$RERUN = true
+						Process.kill("TERM", Process.pid)
+					end
+				else
+					'set=?'
+			end
+		end
+
+		########################################
+		#
+		# remote commands
+		#
+		########################################
+
+		# restart webserver
+		post '/restart' do
+			if params[:confirm] != 'yes'
+				halt 400, 'confirmation needed'
+			end
+
+			$RERUN = true
+			Process.kill("TERM", Process.pid)
+			'<html><head><meta http-equiv="refresh" content="5; url=/"></head><body>restarting...</body></html>'
+		end
+
+		# shutdown kamishibai
+		post '/shutdown' do
+			if params[:confirm] != 'yes'
+				halt 400, 'confirmation needed'
+			end
+			
+			$RERUN = false
+			Process.kill("TERM", Process.pid)
+		end
+
+		# delete file (put into Trash folder)
+		post '/api/book/delete' do
+			bookcode = request['bookcode'].untaint
+
+			fp = $db.get_book(bookcode).fullpath
+
+			trash_dir = File.dirname( fp ) + '/Trash'
+
+			unless FileTest.directory?( trash_dir )
+				unless File.stat( File.dirname(fp) ).writable?
+					halt 400, "Error. Directory is read only! #{ File.dirname(fp) }"
+				end
+
+				Dir.mkdir( trash_dir )
+			end
+
+			File.rename( fp, trash_dir + '/' + File.basename(fp) )
+
+			"deleted #{File.basename(fp)}"
+		end
+
+		get '/gc_stat' do
+			content_type :text
+			JSON.pretty_generate(GC.stat)
+		end
+
+		get '/gc_start' do
+			GC.start
+			content_type :text
+			'done'
+		end
+
+		get '/mem_prof' do
+			content_type :text
+			unless $pf
+				$pf = true
+				MemoryProfiler.start
+				'mp started'
 			else
-				# give raw
-				image
+				$pf = false
+				report = MemoryProfiler.stop
+				report.pretty_print
+				'mp stopped'
 			end
 		end
 	end
 end
-
-
-# load webserver plug-ins
-Dir.glob( settings.root + '/../**/webserver_*.rb' ) { |f|
-	require f.gsub('.rb','')
-}

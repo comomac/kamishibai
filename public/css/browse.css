@@ -7,16 +7,72 @@ body {
 }
 
 #navtop {
-	/*position: fixed;*/
-	z-index: 999;
+	position: fixed;
+	z-index: 600;
+	top: 0;
+	width: 100%;
+	border-width: 0 0 1px;
+
+	min-height: 20px;
+	margin-bottom: 20px;
+	background-color: #f4f4f4;
+}
+#navtop > * {
+	padding: 10px 10px 4px 10px;
+}
+#searchbox {
+	display: inline;
+	max-width: 35%;
+	height: 40px;
+	margin-top: 4px;
 }
 
-#navcollapse {
-	z-index: 100;
-	background-color: #fafafa;
+#navbarToggle {
+	border-color: #ddd;
+	position: absolute;
+	z-index: 700;
+
+	top: 4px;
+	right: 4px;
+	float: right;
+	padding: 9px 10px;
+	background-color: transparent;
+	background-image: none;
+	border: 1px solid #888;
+	border-radius: 4px;
+}
+#navbarToggle:hover, #navbarToggle:focus {
+	background-color: #ddd;
+}
+#navbarToggle .icon-bar {
+	background-color: #888;
+	margin-top: 4px;
+
+	display: block;
+	width: 22px;
+	height: 2px;
+	border-radius: 1px;
 }
 
-#container2 {
+#dropdown {
+	position: fixed;
+	z-index: 800;
+	background-color: #f4f4f4;
+
+	top: 50px;
+	width: 100%;
+	min-height: 200px;
+	max-height: 50%;
+	overflow-y: scroll;
+}
+#dropdown > * {
+	margin: 2px;
+}
+#dropdown #bookmark-sources div {
+	margin: 2px 1px 2px 1px;
+}
+
+#container {
 	z-index: 1;
 	top: 51px;
 	left: 0px;
@@ -26,14 +82,9 @@ body {
 	margin: 0px;
 }
 
-#dir_lists {
-	/* hack to make browse.html top menu always shown collasped */
-	min-height: 1024px;
-}
-
 #ul-lists {
 	/* align with top menu */
-	top: 57px;
+	/* top: 57px; */
 	left: 0px;
 	position: absolute;
 	width: 100%;

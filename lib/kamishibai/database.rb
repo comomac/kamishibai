@@ -12,63 +12,51 @@ require 'pathname'
 
 module Kamishibai
 	class Database
-		attr_reader :files, :bookcodes
+		attr_reader :files, :bookcodes, :books
 
 		def initialize( db_filepath, bookmarks_filepath )
 			@db_savepath = db_filepath
 			@db_dirty = true
+			# keep track of dirs to add, to prevent dup dir or nested
+			@pending_add_books_dirs = [
+				# { dir: /a/b/c, time: <inserted epoch time> },
+			]
 
-			if File.exists?( @db_savepath )
+			if File.exists?( @db_savepath ) and File.size( @db_savepath ) > 0
 				load_database
 			else
 				# create fresh database
-				@db = {}
+				@books = {}
 				# indexes
-				@bookcodes = []
 				@files = {}
 				@inodes = {}
 			end
 
-
 			# bookmark section
 			@bookmarks_savepath = bookmarks_filepath
-			@bookmarks_dirty = false
 
+			# restore bookmark
 			if File.exists?( @bookmarks_savepath )
-				load_bookmarks
-			end
-		end
-
-		def add_book(filepath)
-			bookcode = gen_bookcode
-			o = Kamishibai::Book.new(bookcode, filepath)
-
-			if o.pages
-				@db[ bookcode ] = o
-				@bookcodes << bookcode
-				if File.exists?( filepath )
-					@files[ File.basename( filepath ).delete('ÿ') ] = bookcode # utf8-mac puts ÿ in filename, need to remove first for cross os support
-					@inodes[ o.inode ] = bookcode
+				bookmarks = read_bookmarks
+				bookmarks.keys.each { |bookcode|
+					h = bookmarks[bookcode]
+					o = get_book(bookcode)
+					next unless o
+					o.page  = h['p']
+					o.rtime = h['r']
+				}
+				if bookmarks.length > 0
+					@db_dirty = true
 				end
-
-				@db_dirty = true
-
-				puts "added book. #{bookcode} #{filepath}" if $debug
-				bookcode
 			end
 		end
 
 		def has_bookcode?(bookcode)
-			@bookcodes.include?( bookcode )
+			@books.has_key?(bookcode)
 		end
 
 		def get_book(bookcode)
-			@db[ bookcode ]
-		end
-
-		def get_bookcode_byfilename(filename)
-			filename = File.basename( filename )
-			@files[ filename ]
+			@books[ bookcode ]
 		end
 
 		def get_book_byfilename(filename)
@@ -79,36 +67,33 @@ module Kamishibai
 
 		def set_bookmark(bookcode, page)
 			puts "set_bookmark #{bookcode} #{page}" if $debug
-			@bookmarks_dirty = true
 			o = get_book(bookcode)
 			o.page  = page
 			o.rtime = Time.now.to_i
+			@db_dirty = true
+
+			save_bookmarks(o)
 		end
 
 		def get_bookmark(bookcode)
 			get_book( bookcode ).page
 		end
 
-		def books
-			@db
-		end
-
-		# refresh @bookcodes, making sure all the books have valid path
-		def refresh_bookcodes
-			bookcodes = []
-			for bookcode, book in @db
-				if File.exists?( book.fullpath )
-					book.fullpath_valid = true
-					bookcodes << bookcode
-				else
-					book.fullpath_valid = false
-				end
-			end
-
-			@bookcodes = bookcodes
+		# basic db stats
+		def get_stats
+			# WARNING, might cause issue because iteration (.collect/.each) may break during @db modification
+			# e.g.  <error> can't add a new key into hash during iteration (RuntimeError)
+			return {
+				totalBooks:      @books.length,
+				totalPages:      @books.collect { |bc, b| b.pages }.reduce( :+ ).to_i,
+				pagesRead:       @books.collect { |bc, b| b.page if b.page }.compact.reduce( :+ ).to_i,
+				booksRead:       @books.collect { |bc, b| b.page if b.page }.compact.length,
+				booksUnfinished: @books.collect { |bc, b| true if b.page && b.page < b.pages }.compact.length,
+				recentReadings:  [].join(", "),
+				favAuthors:      [].join(", "),
+			}
 		end
 		
-
 		# big codes
 
 		# add book from directories, if existing booka are found, modify instead
@@ -116,6 +101,17 @@ module Kamishibai
 			srcs = cleanup_srcs( srcs )
 			
 			for src in srcs
+				# make sure no dups so no repeated rescan in x seconds
+				# clean up first
+				@pending_add_books_dirs.delete_if { |x| x[:time] + 10 <= Time.now.to_i }
+				# check for dup or nested dir, if so, skip
+				if @pending_add_books_dirs.select { |x| src.include?(x[:dir]) }.length > 0
+					puts "skip repeat dir! #{src}"
+					next
+				end
+				# not exist. add then scan dir
+				@pending_add_books_dirs << { dir: src, time: Time.now.to_i }
+
 				# stopped using find module, because it wrack encoding havoc in windows (gives ??? character in unicode filename)
 				# now using Dir.glob instead
 				if recursive
@@ -127,102 +123,141 @@ module Kamishibai
 				Dir.glob(File.expand_path(src).escape_glob + search).delete_if { |f|
 					restricted_dir?(f)
 				}.each { |f|
-					bc = get_bookcode_byfilename( f )
-					o  = get_book( bc )
+					o = get_book_byfilename( f )
 					fs = File.stat(f)
 					o2 = get_book( @inodes[ fs.ino ] )
 
 					if o
 						# book exists in db
-						puts "book match(m1):     #{File.basename(f)} == #{File.basename(o.fullpath)}" if $debug == 2
+						puts "book match(m1):     #{File.basename(f)} == #{File.basename(o.fullpath)}" if $debug
 						
 						# update data with new path
 						o.fullpath = f
+						o.exists   = true
 
-						# update index, as bookcodes is the list that keeps actual books that exists
-						@bookcodes << o.bookcode
+						@db_dirty = true
 					elsif o2 and fs.size == o2.size
 						# found existing book using inode and size, can detected changed filename in same filesystem
-						puts "book match(m2):     #{File.basename(f)} == #{File.basename(o2.fullpath)}" if $debug == 2
+						puts "book match(m2):     #{File.basename(f)} == #{File.basename(o2.fullpath)}" if $debug
 
 						o2.fullpath = f
 						o2.title    = Kamishibai::CBZFilename.title( f )
 						o2.author   = Kamishibai::CBZFilename.author( f )
+						o2.exists   = true
 
 						# update indexes
-						@bookcodes << o2.bookcode
 						@files[ File.basename(f) ] = o2.bookcode
+
+						@db_dirty = true
 					else
 						# book don't exist in db
-						self.add_book(f)
+						# create new
+						puts "new book (nm):      #{File.basename(f)}" if $debug
+
+						# make sure it is cbz
+						pages = cbz_pages?(f)
+						if pages.to_i <= 0
+							puts "skip - not cbz file or no image(s). #{f}"
+							next
+						end
+
+						# create new book object for db
+						o = Kamishibai::Book.new(
+							:bookcode => gen_bookcode,
+							:fullpath => f,
+							:title    => Kamishibai::CBZFilename.title( f ),
+							:author   => Kamishibai::CBZFilename.author( f ),
+							:exists   => true,
+							:pages    => pages,
+							:size     => fs.size,
+							:mtime    => fs.mtime,
+							:inode    => fs.ino
+						)
+
+						# update indexes
+						@books[ o.bookcode ] = o
+						@files[ File.basename(f) ] = o.bookcode
+						@inodes[ o.inode ] = o.bookcode
+
+						puts "   added book. #{o.bookcode}" if $debug
+
+						@db_dirty = true
+					end
+
+					# save every 100th
+					if @books.length % 100 == 0
+						self.save
 					end
 				}
 			end
 
-			puts "Found #{@bookcodes.length} books" if $debug
+			puts "Found #{@books.length} books" if $debug
 		end
 
 		# save database
-		def save
-			if @db_dirty
-				# create dir if dir doesn't exist
-				if ! FileTest.exists?( File.dirname( @db_savepath ) )
-					FileUtils.mkdir_p( File.dirname( @db_savepath ) )
-				end
-				
-				db = {}
-				@db.each { |bookcode, book|
-					next unless book.pages # skip invalid book that contain no page/images
-
-					db[ bookcode ] = {
-						:title    => book.title,
-						:author   => book.author,
-						:fullpath => book.fullpath,
-						:size     => book.size,
-						:inode    => book.inode,
-						:mtime    => book.mtime,
-						:itime    => book.itime,
-						:rtime    => book.rtime,
-						:page     => book.page,
-						:pages    => book.pages
-					}
-				}
-				File.binwrite( @db_savepath, JSON.pretty_generate( db ) )
-				
-				@db_dirty = false
-
-				puts "db saved (#{db.length} books) #{Time.now}" if $debug
+		def save(force=false)
+			force = true if @db_dirty
+			return unless force
+			
+			# create dir if dir doesn't exist
+			if ! FileTest.exists?( File.dirname( @db_savepath ) )
+				FileUtils.mkdir_p( File.dirname( @db_savepath ) )
 			end
+
+			# load bookmarks file
+			bookmarks = read_bookmarks
+			
+			# save db (big file)
+			db = {}
+			@books.keys.each { |bookcode|
+				book = @books[bookcode]
+				next unless book.pages # skip invalid book that contain no page/images
+
+				db[ bookcode ] = {
+					:title    => book.title,
+					:author   => book.author,
+					:fullpath => book.fullpath,
+					:size     => book.size,
+					:inode    => book.inode,
+					:mtime    => book.mtime,
+					:itime    => book.itime,
+					:rtime    => book.rtime,
+					:page     => book.page,
+					:pages    => book.pages
+				}
+
+				# overwrite with bookmark
+				if bookmarks[ bookcode ]
+					db[ bookcode ][:page]  = bookmarks[ bookcode ][:page]
+					db[ bookcode ][:rtime] = bookmarks[ bookcode ][:rtime]
+				end
+			}
+			File.binwrite( @db_savepath, JSON.pretty_generate( db ) )
+			@db_dirty = false
+
+			# clear bookmarks file if there is any
+			if bookmarks.length > 0
+				File.binwrite(@bookmarks_savepath, "{}")
+			end
+
+			puts "save db done. #{db.length} books. #{Time.now}" if $debug
 		end
 
 		# save bookmarks
-		def save_bookmarks
-			if @bookmarks_dirty
-				# save bookmarks
-				if ! FileTest.exists?( File.dirname( @bookmarks_savepath ) )
-					FileUtils.mkdir_p( File.dirname( @bookmarks_savepath ) )
-				end
+		# provide one book, but save with all other books(marks)
+		def save_bookmarks(book)
+			# load bookmarks file
+			bookmarks = read_bookmarks
 
-				bookmarks = {}
-				@db.each { |bookcode, book|
-					page = book.page  # last read page
-					time = book.rtime # last read time
-
-					if page and page > 1
-						dat = {
-							:p => page,
-							:r => time
-						}
-						bookmarks[bookcode] = dat
-					end
-				}
-				
-				File.binwrite( @bookmarks_savepath, JSON.pretty_generate( bookmarks ) )
-				
-				@bookmarks_dirty = false
-
-				puts "bookmarks saved (#{bookmarks.length} bookmarks) #{Time.now}" if $debug
-			end
+			# then overwrite it
+			bookmarks[ book.bookcode ] = {
+				:p => book.page,
+				:r => book.rtime
+			}
+			
+			File.binwrite( @bookmarks_savepath, JSON.fast_generate( bookmarks, :object_nl=>"\n", :indent=>" " ) )
+			
+			puts "bookmarks saved (#{bookmarks.length} bookmarks) #{Time.now}" if $debug
 		end
 
 
@@ -240,7 +275,6 @@ module Kamishibai
 				end
 			}
 			srcs.compact!
-			p srcs if $debug
 			
 			srcs
 		end
@@ -249,82 +283,80 @@ module Kamishibai
 		def gen_bookcode
 			while true
 				word = GenChar(3)
-				break unless @bookcodes.include?(word) # find next available word
+				break unless @books.has_key?(word) # find next available word
 			end
 			return word
 		end
 
 		# load database
 		def load_database
-			@db = {}
+			@books = {}
 			
 			# indexes for db, help to speed up database search
 			@files = {} # hash of files linked to bookcodes, format: files[basename] = bookcode
-			@bookcodes = [] # list of bookcodes, format: [ bookcode_a, bookcode_b, bookcode_c, ... ]
 			@inodes = {} # list of file inodes, format: inodes[inode] = bookcode
 
 			str = File.binread( @db_savepath )
 
 			JSON.parse( str ).each { |bookcode, h|
-				o = Kamishibai::Book.new
-				o.bookcode = bookcode
-				o.title    = h['title']
-				o.author   = h['author']
-				o.fullpath = h['fullpath']
-				o.size     = h['size']
-				o.mtime    = h['mtime']
-				o.inode    = h['inode']
-				o.itime    = h['itime'] # imported time
-				o.rtime    = h['rtime'] # last read time
-				o.page     = h['page']  # last read page
-				o.pages    = h['pages']
+				o = Kamishibai::Book.new(
+					:bookcode => bookcode,
+					:title    => h['title'],
+					:author   => h['author'],
+					:fullpath => h['fullpath'],
+					:size     => h['size'],
+					:mtime    => h['mtime'],
+					:inode    => h['inode'],
+					:itime    => h['itime'], # imported time
+					:rtime    => h['rtime'], # last read time
+					:page     => h['page'],  # last read page
+					:pages    => h['pages'],
+				)
 
-				unless o.pages
-					puts "Book contain no images!!! skipping... #{bookcode} #{o.fullpath}"
-					next
-				end
-
-				@db[ o.bookcode ] = o
+				@books[ o.bookcode ] = o
 				# update indexes
 				@files[ File.basename( o.fullpath ).delete('ÿ') ] = o.bookcode # utf8-mac puts ÿ in filename, need to remove first for cross os support
 				@inodes[ o.inode ] = o.bookcode
-
-				# if book exists
-				if File.exists?( o.fullpath )
-					fs = File.stat( o.fullpath )
-					o.fullpath_valid = true
-
-					# repopulate data if doesn't exist
-					o.title    = Kamishibai::CBZFilename.title( o.fullpath )  unless o.title
-					o.author   = Kamishibai::CBZFilename.author( o.fullpath ) unless o.author
-					o.size     = fs.size                                      unless o.size
-					o.mtime    = fs.mtime                                     unless o.mtime
-					o.inode    = fs.ino                                       unless o.inode
-
-					# update indexes
-					@bookcodes << o.bookcode
-					@inodes[ o.inode ] = o.bookcode
-				end
 			}
+			puts "load db done. #{@books.length} books #{Time.now}"
 			
-			# db format:   @db[ bookcode ] = Book obj
+			# books format:   @books[ bookcode ] = Book obj
 			# + indexes    @files = { basename_a => bookcode_a, basename_b => bookcode_b, ... }
-			#              @bookcodes = [ bookcode_a, bookcode_b, ... ]
 			#              @inodes = { inode_a => bookcode_a, inode_b => bookcode_b, ... }
 		end
 
-		# load bookmarks
-		def load_bookmarks
+		# load bookmarks file (small), more upto date
+		def read_bookmarks
+			# create dir
+			if ! FileTest.exists?( File.dirname( @bookmarks_savepath ) )
+				FileUtils.mkdir_p( File.dirname( @bookmarks_savepath ) )
+			end
+
 			bookmarks = {}
+			newfile = false
+			# create file
+			if ! FileTest.exist?( @bookmarks_savepath ) or File.size( @bookmarks_savepath ) == 0
+				newfile = true
+				File.binwrite( @bookmarks_savepath, "{}" )
+			end
 
-			str = File.binread( @bookmarks_savepath )
-
-			JSON.parse( str ).each { |bookcode, h|
-				if get_book( bookcode )
-					get_book( bookcode ).page  = h['p']
-					get_book( bookcode ).rtime = h['r']
-				end
+			bookmarks = {
+				# bookcode => {p: 1, r: 1}
 			}
+			# skip for brand new file
+			unless newfile
+				str = File.binread( @bookmarks_savepath )
+				JSON.parse( str ).each { |bookcode, h|
+					bookmarks[ bookcode ] = {
+						:page  => h['p'],
+						:rtime => h['r']
+					}
+				}
+			end
+
+			puts "read bookmarks done. #{bookmarks.length} bookmarks" if $debug
+
+			return bookmarks
 		end
 	end
 end

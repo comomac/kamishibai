@@ -47,7 +47,7 @@ function updir() {
 
 function exe_order_by(str) {
 	// toggle the order button
-	$('.nav-collapse').collapse('toggle');
+	$('#dropdown').addClass('hidden');
 	
 	$.cookie(uport() + '.order_by', str, { path: '/' });
 
@@ -55,12 +55,20 @@ function exe_order_by(str) {
 }
 
 function reload_sources() {
-	var ul = $('#ul-sources');
+	var ul = $('#bookmark-sources');
 	ul.empty();
+
+	var onclick = function(event) {
+		$('#dropdown').addClass('hidden');
+		window.location.hash = "dir=" + event.data.source;
+	};
 
 	$.get('/api/sources', function(sources) {
 		for (var i in sources) {
-			ul.append('<li><a tabindex="-1" href="#dir=' + sources[i] + '" rel="' + sources[i] + '">' + i + '&nbsp;<i class="icon-bookmark"></i>&nbsp;' + sources[i] + '</a></li>');
+			var div = $('<div class="btn btn-primary" tabindex="-1">');
+			div.text(i + ' ' + sources[i]);
+			div.on('click', { source: sources[i] }, onclick);
+			ul.append(div).append("&nbsp;");
 		}
 	});
 }
@@ -87,10 +95,9 @@ function reload_dir_lists(dir_path, keyword) {
 	// set the last path selected on cookie
 	$.cookie(uport() + '.lastpath', dir_path, { path: '/' });
 
-	var el = $('#dir_lists');
-	el.empty();
-
-	$.post('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
+	$.get('/api/dir_list', { dir: dir_path, keyword: keyword, order_by: order_by }, function(data) {
+		var el = $('#dir_lists');
+		el.empty();
 		el.append(data);
 
 		// make li evenly horizontally filled
@@ -99,16 +106,6 @@ function reload_dir_lists(dir_path, keyword) {
 		var num = parseInt(window_width / li_width);
 		num = parseInt(window_width / num);
 		$('.directory, .file').css('width', num +'px');
-
-		// replace all links to desktop reader
-		if (!hasTouch) {
-			for (var i in el.find('LI A')) {
-				var el_a = el.find('LI A').eq(i);
-				if (el_a.parent().hasClass('file')) {
-					el_a.attr('href', el_a.attr('href').replace(/reader2/,'reader') );
-				}
-			}
-		}
 
 		// make images load only when scrolled into view
 		$("img.lazy").lazyload({
@@ -207,7 +204,7 @@ function countdownDelete(el, time) {
 function delete_enable() {
 	isDeleteMode = true;
 
-	$('.nav-collapse').collapse('toggle');
+	$('#dropdown').addClass('hidden');
 
 	var el = $('#btnDeleteDisable');
 	el.removeClass('hidden');
@@ -298,6 +295,11 @@ document.onkeydown = function(e) {
 
 // page init
 $(function() {
+	// hacky solution to prevent ios browser pan/scroll whole page when the child div is touched/dragged
+	$('#dropdown').on('touchmove', function(event) {
+		event.preventDefault();
+	});
+
 	// load the text localization
 	reload_locale();
 
@@ -316,7 +318,7 @@ $(function() {
 			// enter key || escape key, unfocus the searchbox
 			$('#searchbox').blur();
 			// close top menu
-			$('#navcollapse').removeClass('in');
+			$('#dropdown').addClass('hidden');
 		}
 
 		// get dir from hash
@@ -348,7 +350,7 @@ $(function() {
 			}
 			else {
 				// click the first source if there is no lastpath
-				window.location.hash = $('#ul-sources').find('LI A').eq(0).attr('href');
+				window.location.hash = $('#bookmark-sources').find('LI A').eq(0).attr('href');
 			}
 		}, 50);
 

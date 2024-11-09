@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <meta charset='utf-8'>
+    <title>Kamishibai</title>
+    <link href='/vendor/css/bootstrap.min.css' rel='stylesheet' type='text/css'>
+    <link href='/vendor/css/jqueryFileTree.css' rel='stylesheet' type='text/css'>
+    <script src='/vendor/js/jquery-1.12.4.min.js'></script>
+    <script src='/vendor/js/bootstrap.min.js'></script>
+    <script src='/vendor/js/jquery.localize.js'></script>
+    <script src='/vendor/js/jqueryFileTree.js'></script>
+    <script src='/js/config.js'></script>
+    <script src='/js/utilities.js'></script>
+</head>
+
+<body>
+    <div class='container'>
+        <div class='page-header'>
+            <h2 data-localize='Kamishibai'></h2>
+            <a href='/'>
+                <span class='btn btn-link' data-localize='config.Browse'></span>
+            </a>
+            <a href='/stats.html'>
+                <span class='btn btn-link' data-localize='config.Statistics'></span>
+            </a>
+        </div>
+        <div class='tabbable'>
+            <ul class='nav nav-tabs'>
+                <li class='active'>
+                    <a data-localize='folders' data-toggle='tab' href='#tab1'></a>
+                </li>
+                <li>
+                    <a data-localize='preferences' data-toggle='tab' href='#tab2'
+                        onclick='pref_load(); return false;'></a>
+                </li>
+            </ul>
+            <div class='tab-content'>
+                <div class='tab-pane active' id='tab1'>
+                    <p class='text-right'>
+                        <button class='btn btn-primary' data-localize='config.SaveFolders' data-toggle='modal'
+                            href='#modal-saving' id='btn_sf' onclick='save_dirs();'></button>
+                        <button class='btn' data-localize='config.AddFolder' data-toggle='modal'
+                            href='#modal-add-folder' id='btn_af' onclick='load_dir("/");'></button>
+                    </p>
+                    <table class='table table-bordered table-striped' id='dirtable'>
+                        <thead>
+                            <tr>
+                                <th class='c1' data-localize='folder'></th>
+                                <th class='c2' data-localize='config.Action'></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan='2'>
+                                    <span class='pull-right' data-localize='config.Books'></span>
+                                    <span class='pull-right' id='total_books'>?&nbsp;</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class='tab-pane' id='tab2'>
+                    <form class='form-horizontal'>
+                        <div class='control-group'>
+                            <label class='control-label' data-localize='config.Port' for='port'></label>
+                            <div class='controls'>
+                                <input disabled='' id='port' name='port' type='text' value='loading...'>
+                            </div>
+                        </div>
+                        <div class='control-group'>
+                            <label class='control-label' data-localize='config.NewBookDays' for='new_book_days'></label>
+                            <div class='controls'>
+                                <input disabled='' id='new_book_days' name='new_book_days' type='text'
+                                    value='loading...'>
+                            </div>
+                        </div>
+                        <div class='control-group'>
+                            <label class='control-label' data-localize='username' for='username'></label>
+                            <div class='controls'>
+                                <input disabled='' id='username' name='username' type='text' value='loading...'>
+                            </div>
+                        </div>
+                        <div class='control-group'>
+                            <label class='control-label' data-localize='password' for='password'></label>
+                            <div class='controls'>
+                                <input disabled='' id='password' name='password' type='text' value='loading...'>
+                            </div>
+                        </div>
+                        <div class='control-group'>
+                            <label class='control-label' data-localize='config.ResizeImage' for='img_resize'></label>
+                            <div class='controls'>
+                                <select data-role='slider' disabled='' id='img_resize' name='img_resize'>
+                                    <option data-localize='yes' value='on'></option>
+                                    <option data-localize='no' value='off'></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class='control-group'>
+                            <label class='control-label' data-localize='config.ImageQuality' for='img_quality'></label>
+                            <div class='controls'>
+                                <input disabled='' id='img_quality' name='img_quality' type='text' value='loading...'>
+                            </div>
+                        </div>
+                        <div id='pref-buttons'>
+                            <div class='controls'>
+                                <button class='btn' data-localize='cancel' id='pref-cancel'
+                                    onclick='pref_load(); return false;'></button>
+                                <button class='btn btn-primary' data-localize='config.SavePreferences'
+                                    data-toggle='modal' disabled='' href='#modal-saving' id='pref-save'
+                                    onclick='pref_save(); return false;'></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class='text-center'></div>
+    </div>
+    <div class='modal fade' id='modal-saving'>
+        <div class='modal-dialog'>
+            <div class='modal-content'>
+                <div class='modal-header'>
+                    <h3 data-localize='config.Saving'></h3>
+                </div>
+                <div class='modal-body'>
+                    <p data-localize='config.SavingMsg'></p>
+                </div>
+                <div class='modal-footer'>
+                    <p></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class='modal fade' id='modal-add-folder'>
+        <div class='modal-dialog'>
+            <div class='modal-content'>
+                <div class='modal-header'>
+                    <button aria-hidden='true' class='close' data-dismiss='modal' type='button'>x</button>
+                    <h3 class='modal-title' data-localize='config.AddFolder'></h3>
+                    <div>
+                        <div id='drives'></div>
+                        <label class='span1' data-localize='config.Path'></label>
+                        <input class='span5 input-small' id='path' name='path' type='text' value='/'>
+                    </div>
+                </div>
+                <div class='modal-body'>
+                    <div id='af-dirnav'></div>
+                </div>
+                <div class='modal-footer'>
+                    <button aria-hiden='true' class='btn' data-dismiss='modal' data-localize='cancel'></button>
+                    <button aria-hiden='true' class='btn btn-primary' data-dismiss='modal'
+                        data-localize='config.AddFolder' id='af-save'
+                        onclick='af_add_dir( $("#path").val() );'></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style='display: none;'>
+        <!-- error messages, hack for localization -->
+        <span data-localize='config.alertPort' id='alertPort'></span>
+        <span data-localize='config.alertImageQuality' id='alertImageQuality'></span>
+    </div>
+</body>
+
+</html>
