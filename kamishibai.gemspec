@@ -10,18 +10,19 @@ Gem::Specification.new do |s|
   s.authors     = ["Mac Ma"]
   s.email       = 'gitmac@etneko.info'
   s.homepage    = 'http://rubygems.org/gems/kamishibai'
-  s.license     = 'BSD 3-clause'
+  s.license     = 'BSD-3-clause'
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.rubyforge_project = 'kamishibai'
 
-  s.add_dependency 'addressable', '>= 2.3.5'
-  s.add_dependency 'thin',      '>= 1.6.0'
-  s.add_dependency 'ffi',       '>= 1.9.0'
-  s.add_dependency 'gd2-ffij',  '>= 0.4.0'
-  s.add_dependency 'json',      '>= 1.7.7'
-  s.add_dependency 'rubyzip',   '>= 1.0.0'
-  s.add_dependency 'sinatra',   '>= 1.4.4'
+  s.add_dependency 'addressable', '= 2.3.5'
+  s.add_dependency 'thin',        '= 1.6.0'
+  s.add_dependency 'ffi',         '= 1.9.0'
+  s.add_dependency 'gd2-ffij',    '= 0.4.0'
+  s.add_dependency 'rubyzip',     '= 1.0.0'
+  s.add_dependency 'sinatra',     '= 1.4.4'
+  s.add_dependency 'sinatra-contrib',  '= 1.4.2'
+  s.add_dependency 'memory_profiler',  '= 1.0.2'
   
   s.require_paths = ['lib']
   s.files = `git ls-files`.split($\)

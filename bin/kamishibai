@@ -9,7 +9,6 @@ Encoding.default_internal = Encoding::UTF_8
 
 require 'rbconfig'
 require 'getoptlong'
-require 'json/ext' # load early to use good quality json library instead of crappy one
 
 opts = GetoptLong.new(
 	[ "--debug",   "-d", GetoptLong::NO_ARGUMENT ]
