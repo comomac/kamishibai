@@ -35,8 +35,11 @@ Screenshots:
 Installation:
 --------------------------
 `gem install kamishibai`
-  
 
+If rvm install ruby having issue
+  `rvm pkg install openssl`
+  `rvm install 2.7.8 --with-openssl-dir=$HOME/.rvm/usr`
+  
 Installation (extra info):
 --------------------------
 
