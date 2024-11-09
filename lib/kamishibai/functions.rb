@@ -241,7 +241,7 @@ else
 		# fork image resize into separate process
 		# this is a hack to stop memory leak in linux
 		rd, wr = IO.pipe
-		fork do
+		chpid = fork do
 			rd.close
 			out = ""
 			begin
@@ -314,7 +314,11 @@ else
 		end
 
 		wr.close
-		return rd.read
+		# put in this order, read then wait for process to finish
+		# otherwise it will create many zombie process
+		out = rd.read
+		Process.wait(chpid)
+		return out
 	end
 end
 
