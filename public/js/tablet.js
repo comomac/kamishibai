@@ -1,5 +1,7 @@
 /*jshint es3: true */
 
+var ver = 7;
+
 // ########################################################################################
 // #
 // #      browse
@@ -570,6 +572,13 @@ function closeReader() {
 
 	document.title = "Kamishibai";
 
+	// exit full screen as some browser lost touch if remain in full screen
+	var doc = window.document;
+	var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen || undefined;
+	if (!!cancelFullScreen) {
+		cancelFullScreen.call(doc);
+	}
+
 	reload_books( $('#bookinfo').attr('bookcodes') );
 }
 
@@ -757,6 +766,9 @@ function onload() {
 	/*
 	*  Browse section
 	*/
+
+	// know current ver
+	$('#ver').text(ver);
 
 	// load the text localization
 	reload_locale();
