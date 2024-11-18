@@ -1,6 +1,5 @@
-Kamishibai
-=========================
-> pronounce kami-shi-bye
+# Kamishibai
+> pronounce ka-me-shi-bye
 
 Remote manga reader. Read manga anywhere using a web browser.  
 
@@ -18,8 +17,8 @@ Has username and password authentication to protect login.
 
 Primary focus on older hardware such as old tablet and PC.
 
-Screenshots:
---------------------------  
+## Screenshots:
+  
 ### Directory view  
 ![Directory view](/images/view_dir.jpg)
 
@@ -32,55 +31,56 @@ Screenshots:
 ### Settings  
 ![Settings](/images/settings.jpg)
 
-Installation:
---------------------------
+## Installation:
 `gem install kamishibai`
 
 If rvm install ruby having issue
   `rvm pkg install openssl`
   `rvm install 2.7.8 --with-openssl-dir=$HOME/.rvm/usr`
   
-Installation (extra info):
---------------------------
+## Development
+```bash
+# install all dependency
+bundle install
+# start server
+bin/kamishibai --debug
+```
 
-Mac OS X:  
+## Installation (extra info):
+
+### Mac OS X:  
 1. Install [MacPorts](http://www.macports.org/)  
 2. sudo port install ruby25 rb-rubygems gd2  
 3. sudo gem install kamishibai
   
-Linux (Ubuntu/Debian):  
+### Linux (Ubuntu/Debian):  
 1. sudo apt-get install ruby ruby-dev libgd-dev
 2. sudo gem install kamishibai
 
-Windows:
+### Windows:
 1. Install the [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 2. Choose Ubuntu install
 3. Follow instruction for Linux above
 
-Access:
---------------------------
+## Access:
 1. Run program   `kamishibai`
 2. Open browser and type  `http://127.0.0.1:9999`  
 3. Default username and password is admin/admin, please change it for security purpose.
 
-Configuration:
---------------------------
+## Configuration:
 Config file is written in JSON format. The config file will be located at ~/etc/kamishibai.conf. The config file can also manually selected by appending the config path after the program.  
 
 There is also web configuration panel, goto http://host_ip:host_port/config to configure.
 
 
   
-Start:  
---------------------------
+## Start:  
 kamishibai [config_file.conf]
   
-File Format:
---------------------------
+## File Format:
 Only CBZ is supported and it should be zero compressed zip file. This will reduce the burden on the system when reading as well as making the experience more responsive. The file name will determind how it will be organized by the program.
 
-File naming convention:
---------------------------
+## File naming convention:
 Ideally, the CBZ file name should be in such format.  
   
 (genre|meta data) [Author] Book Title Volume|chapter|v|ch 1.  
@@ -90,7 +90,6 @@ For example
 (一般コミック) [山田太郎] 桜の世界 第01巻.cbz  
   
   
-License:
---------------------------
+## License:
 BSD 3-clause
-Mac Ma gitmac at runbox.com (C) 2013-2023 Copyright
+Mac Ma gitmac at runbox.com (C) 2013-2024 Copyright
