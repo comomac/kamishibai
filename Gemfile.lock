@@ -3,13 +3,13 @@ PATH
   specs:
     kamishibai (1.4.0)
       addressable (= 2.3.5)
-      ffi (= 1.9.0)
+      ffi (= 1.14.0)
       gd2-ffij (= 0.4.0)
       memory_profiler (= 1.0.2)
       rubyzip (= 1.0.0)
       sinatra (= 1.4.4)
       sinatra-contrib (= 1.4.2)
-      thin (= 1.6.0)
+      thin (= 1.8.2)
 
 GEM
   remote: https://rubygems.org/
@@ -18,7 +18,7 @@ GEM
     backports (3.25.0)
     daemons (1.4.1)
     eventmachine (1.2.7)
-    ffi (1.9.0)
+    ffi (1.14.0)
     gd2-ffij (0.4.0)
       ffi (>= 1.0.0)
     memory_profiler (1.0.2)
@@ -40,16 +40,17 @@ GEM
       rack-test
       sinatra (~> 1.4.0)
       tilt (~> 1.3)
-    thin (1.6.0)
-      daemons (>= 1.0.9)
-      eventmachine (>= 1.0.0)
-      rack (>= 1.5.0)
+    thin (1.8.2)
+      daemons (~> 1.0, >= 1.0.9)
+      eventmachine (~> 1.0, >= 1.0.4)
+      rack (>= 1, < 3)
     tilt (1.4.1)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  bundler (= 2.1.4)
   kamishibai!
 
 BUNDLED WITH

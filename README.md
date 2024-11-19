@@ -34,14 +34,20 @@ Primary focus on older hardware such as old tablet and PC.
 ## Installation:
 `gem install kamishibai`
 
-If rvm install ruby having issue
-  `rvm pkg install openssl`
-  `rvm install 2.7.8 --with-openssl-dir=$HOME/.rvm/usr`
   
 ## Development
 ```bash
+# install brew
+# install rvm
+
+# install openssl 1.1 from other source so we can install ruby 2.7.2
+brew install rbenv/tap/openssl@1.1
+rvm install 2.7.2
+
+# install the installer
+gem install bundler -v '2.1.4'
 # install all dependency
-bundle install
+bundle _2.1.4_ install
 # start server
 bin/kamishibai --debug
 ```
